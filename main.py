@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(layout="wide", page_title="CARDS XDAYS & CARDS 30DPD REPORT", page_icon="📊", initial_sidebar_state="expanded")
+st.set_page_config(layout="wide", page_title="PL XDAYS REPORT", page_icon="📊", initial_sidebar_state="expanded")
 
 # Apply dark mode
 st.markdown(
