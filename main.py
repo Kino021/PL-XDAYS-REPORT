@@ -76,3 +76,9 @@ if uploaded_file is not None:
     st.write("## Overall Combined Summary Table")
     combined_summary_table = calculate_combined_summary(df)
     st.write(combined_summary_table, container_width=True)
+
+    st.write("## Summary Table by Cycle")
+    for cycle, cycle_group in df.groupby('Service No.'):
+        st.write(f"Cycle: {cycle}")
+        summary_table = calculate_combined_summary(cycle_group)
+        st.write(summary_table)
