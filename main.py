@@ -54,9 +54,7 @@ if uploaded_file is not None:
             ptp_acc = group[(group['Status'].str.contains('PTP', na=False)) & (group['PTP Amount'] != 0)]['Account No.'].nunique()
             ptp_rate = (ptp_acc / connected_acc * 100) if connected_acc != 0 else None
 
-            call_drop_dropped = group[group['Call Status'].str.contains('DROPPED', na=False)]['Account No.'].nunique()
-            call_drop_negative = group[group['Status'].str.contains('NEGATIVE CALLOUTS', na=False)]['Account No.'].nunique()
-            call_drop_count = call_drop_dropped + call_drop_negative
+            call_drop_count = group[group['Status'].str.contains('DROPPED|NEGATIVE CALLOUTS', na=False)]['Account No.'].nunique()
             call_drop_ratio = (call_drop_count / connected * 100) if connected != 0 else None
 
             summary_table = pd.concat([summary_table, pd.DataFrame([{
