@@ -55,7 +55,7 @@ if uploaded_file is not None:
             ptp_rate = (ptp_acc / connected_acc * 100) if connected_acc != 0 else None
 
             call_drop_count = group[
-                (group['Call Status'].str.contains('DROPPED', na=False)) & 
+                (group['Call Status'].str.contains('DROPPED', na=False)) | 
                 (group['Status'].str.contains('NEGATIVE CALLOUTS', na=False))
             ]['Account No.'].count()
             call_drop_ratio = (call_drop_count / connected * 100) if connected != 0 else None
@@ -89,3 +89,9 @@ if uploaded_file is not None:
     st.write("## Overall Manual Summary Table")
     manual_summary_table = calculate_combined_summary(df[df['Remark Type'] == 'Outgoing'])
     st.write(manual_summary_table)
+    
+    st.write("## Manual Summary Table by Cycle")
+    for manual_cycle, manual_cycle_group in df[df['Remark Type'] == 'Outgoing'].groupby('Service No.'):
+        st.write(f"Cycle: {manual_cycle}")
+        summary_table = calculate_combined_summary(manual_cycle_group)
+        st.write(summary_table)
