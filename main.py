@@ -85,3 +85,7 @@ if uploaded_file is not None:
         st.write(f"Cycle: {cycle}")
         summary_table = calculate_combined_summary(cycle_group)
         st.write(summary_table)
+    
+    st.write("## Overall Manual Summary Table")
+    manual_summary_table = calculate_combined_summary(df[df['Remark Type'] == 'Outgoing'])
+    st.write(manual_summary_table)
