@@ -57,7 +57,7 @@ if uploaded_file is not None:
             call_drop_count = group[
                 (group['Call Status'].str.contains('DROPPED', na=False)) | 
                 (group['Status'].str.contains('NEGATIVE CALLOUTS', na=False))
-            ]['Account No.'].count()
+            ]['Account No.'].nunique()
             call_drop_ratio = (call_drop_count / connected * 100) if connected != 0 else None
 
             summary_table = pd.concat([summary_table, pd.DataFrame([{
