@@ -34,15 +34,15 @@ if uploaded_file is not None:
 
     def calculate_summary(df, remark_types, cycle_grouping=False):
         summary_table = pd.DataFrame(columns=[
-            'CYCLE' if cycle_grouping else 'DAY', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
+            'DATE', 'CYCLE' if cycle_grouping else 'DAY', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
             'CONNECTED RATE (%)', 'CONNECTED ACC', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
             'TOTAL BALANCE', 'CALL DROP #', 'SYSTEM DROP', 'CALL DROP RATIO #'
         ]) 
 
         df_filtered = df[df['REMARK TYPE'].isin(remark_types)]
-        grouping_column = 'CYCLE' if cycle_grouping else df_filtered['DATE'].dt.date
+        grouping_column = ['DATE', 'CYCLE'] if cycle_grouping else df_filtered['DATE'].dt.date
 
-        for cycle, group in df_filtered.groupby(grouping_column):
+        for (date, cycle), group in df_filtered.groupby(grouping_column):
             accounts = group['ACCOUNT NO.'].nunique()
             total_dialed = group['ACCOUNT NO.'].count()
             connected = group[group['CALL STATUS'] == 'CONNECTED']['ACCOUNT NO.'].nunique()
@@ -59,7 +59,8 @@ if uploaded_file is not None:
             call_drop_ratio = (system_drop / connected_acc * 100) if connected_acc != 0 else None
 
             summary_table = pd.concat([summary_table, pd.DataFrame([{
-                'CYCLE' if cycle_grouping else 'DAY': cycle,
+                'DATE': date,
+                'CYCLE': cycle if cycle_grouping else date,
                 'ACCOUNTS': accounts,
                 'TOTAL DIALED': total_dialed,
                 'PENETRATION RATE (%)': f"{round(penetration_rate)}%" if penetration_rate is not None else None,
