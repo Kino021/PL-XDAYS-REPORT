@@ -49,7 +49,7 @@ if uploaded_file is not None:
         df_filtered['DATE'] = df_filtered['DATE'].dt.date  # Ensure DATE is just the date part
         grouping_column = ['DATE', 'CYCLE'] if cycle_grouping else ['DATE']
 
-        for group_keys, group in df_filtered.groupby(grouping_column):
+        for group_keys, group in df_filtered.groupby(grouping_column, dropna=False):
             date = group_keys[0]
             cycle = group_keys[1] if cycle_grouping else None
             
@@ -90,7 +90,7 @@ if uploaded_file is not None:
             
             summary_table = pd.concat([summary_table, pd.DataFrame([summary_data])], ignore_index=True)
         
-        return summary_table
+        return summary_table.sort_values(by=['DATE', 'CYCLE'] if cycle_grouping else ['DATE'])
 
     st.write("## Overall Combined Summary Table")
     st.write(calculate_summary(df, ['Predictive', 'Follow Up', 'Outgoing']))
