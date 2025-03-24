@@ -34,12 +34,16 @@ if uploaded_file is not None:
     df['CYCLE'] = df['CYCLE'].astype(str)
 
     def calculate_summary(df, remark_types, cycle_grouping=False):
-        summary_table = pd.DataFrame(columns=[
-            'DATE', 'CYCLE', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
+        summary_columns = [
+            'DATE', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
             'CONNECTED RATE (%)', 'CONNECTED ACC', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
             'TOTAL BALANCE', 'CALL DROP #', 'SYSTEM DROP', 'CALL DROP RATIO #'
-        ]) 
-
+        ]
+        if cycle_grouping:
+            summary_columns.insert(1, 'CYCLE')
+        
+        summary_table = pd.DataFrame(columns=summary_columns)
+        
         df_filtered = df[df['REMARK TYPE'].isin(remark_types)].copy()
         
         df_filtered['DATE'] = df_filtered['DATE'].dt.date  # Ensure DATE is just the date part
@@ -64,9 +68,8 @@ if uploaded_file is not None:
                                     (~group['REMARK BY'].str.upper().isin(['SYSTEM']))]['ACCOUNT NO.'].count()
             call_drop_ratio = (system_drop / connected_acc * 100) if connected_acc != 0 else 0
 
-            summary_table = pd.concat([summary_table, pd.DataFrame([{
+            summary_data = {
                 'DATE': date,
-                'CYCLE': cycle,
                 'ACCOUNTS': accounts,
                 'TOTAL DIALED': total_dialed,
                 'PENETRATION RATE (%)': f"{round(penetration_rate)}%",
@@ -80,8 +83,13 @@ if uploaded_file is not None:
                 'CALL DROP #': call_drop_count,
                 'SYSTEM DROP': system_drop,
                 'CALL DROP RATIO #': f"{round(call_drop_ratio)}%",
-            }])], ignore_index=True)
-
+            }
+            
+            if cycle_grouping:
+                summary_data['CYCLE'] = cycle
+            
+            summary_table = pd.concat([summary_table, pd.DataFrame([summary_data])], ignore_index=True)
+        
         return summary_table
 
     st.write("## Overall Combined Summary Table")
