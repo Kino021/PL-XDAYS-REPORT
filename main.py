@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import datetime
 
 st.set_page_config(layout="wide", page_title="Daily Remark Summary", page_icon="📊", initial_sidebar_state="expanded")
 
@@ -33,10 +34,14 @@ if uploaded_file is not None:
     df['CYCLE'] = df['CYCLE'].fillna('Unknown')
     df['CYCLE'] = df['CYCLE'].astype(str)
 
+    def format_seconds_to_hms(seconds):
+        """Convert total seconds to HH:MM:SS format."""
+        return str(datetime.timedelta(seconds=int(seconds)))
+
     def calculate_summary(df, remark_types, manual_correction=False):
         summary_columns = [
             'DATE', 'CLIENT', 'COLLECTORS', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
-            'CONNECTED RATE (%)', 'CONNECTED ACC', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
+            'CONNECTED RATE (%)', 'CONNECTED ACC', 'TOTAL TALK TIME', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
             'TOTAL BALANCE', 'CALL DROP #', 'SYSTEM DROP', 'CALL DROP RATIO #'
         ]
         
@@ -68,6 +73,9 @@ if uploaded_file is not None:
             # Count unique collectors where 'Call Duration' is not empty
             collectors = group[group['CALL DURATION'].notna()]['REMARK BY'].nunique()
 
+            # Sum up total talk time (Talk Time Duration) and format as HH:MM:SS
+            total_talk_time = format_seconds_to_hms(group['TALK TIME DURATION'].sum())
+
             summary_data = {
                 'DATE': date,
                 'CLIENT': client,
@@ -78,6 +86,7 @@ if uploaded_file is not None:
                 'CONNECTED #': connected,
                 'CONNECTED RATE (%)': f"{round(connected_rate)}%",
                 'CONNECTED ACC': connected_acc,
+                'TOTAL TALK TIME': total_talk_time,
                 'PTP ACC': ptp_acc,
                 'PTP RATE': f"{round(ptp_rate)}%",
                 'TOTAL PTP AMOUNT': total_ptp_amount,
