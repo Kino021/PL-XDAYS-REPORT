@@ -35,7 +35,7 @@ if uploaded_file is not None:
 
     def calculate_summary(df, remark_types, manual_correction=False):
         summary_columns = [
-            'DATE', 'CLIENT', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
+            'DATE', 'CLIENT', 'COLLECTORS', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
             'CONNECTED RATE (%)', 'CONNECTED ACC', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
             'TOTAL BALANCE', 'CALL DROP #', 'SYSTEM DROP', 'CALL DROP RATIO #'
         ]
@@ -65,9 +65,13 @@ if uploaded_file is not None:
             else:
                 call_drop_ratio = (system_drop / connected_acc * 100) if connected_acc != 0 else 0
 
+            # Count unique collectors where 'Call Duration' is not empty
+            collectors = group[group['CALL DURATION'].notna()]['REMARK BY'].nunique()
+
             summary_data = {
                 'DATE': date,
                 'CLIENT': client,
+                'COLLECTORS': collectors,
                 'ACCOUNTS': accounts,
                 'TOTAL DIALED': total_dialed,
                 'PENETRATION RATE (%)': f"{round(penetration_rate)}%",
