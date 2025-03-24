@@ -35,7 +35,7 @@ if uploaded_file is not None:
 
     def calculate_summary(df, remark_types, cycle_grouping=False):
         summary_table = pd.DataFrame(columns=[
-            'DATE', 'CYCLE' if cycle_grouping else 'DAY', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
+            'DATE', 'CYCLE' if cycle_grouping else 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
             'CONNECTED RATE (%)', 'CONNECTED ACC', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
             'TOTAL BALANCE', 'CALL DROP #', 'SYSTEM DROP', 'CALL DROP RATIO #'
         ]) 
@@ -69,7 +69,7 @@ if uploaded_file is not None:
 
             summary_table = pd.concat([summary_table, pd.DataFrame([{
                 'DATE': date,
-                'CYCLE': cycle if cycle_grouping else date,
+                'CYCLE': cycle if cycle_grouping else None,
                 'ACCOUNTS': accounts,
                 'TOTAL DIALED': total_dialed,
                 'PENETRATION RATE (%)': f"{round(penetration_rate)}%",
