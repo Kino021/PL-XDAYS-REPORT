@@ -17,30 +17,22 @@ uploaded_file = st.sidebar.file_uploader("Upload Daily Remark File", type="xlsx"
 
 if uploaded_file is not None:
     df = load_data(uploaded_file)
-    st.write(f"Initial Data Count: {len(df)}")
-    
     df = df[~df['DEBTOR'].str.contains("DEFAULT_LEAD_", case=False, na=False)]
     df = df[~df['STATUS'].str.contains('ABORT', na=False)]
     
     excluded_remarks = [
         "Broken Promise", "New files imported", "Updates when case reassign to another collector", 
-        "NDF IN ICS", "FOR PULL OUT (END OF HANDLING PERIOD)", "END OF HANDLING PERIOD"
+        "NDF IN ICS", "FOR PULL OUT (END OF HANDLING PERIOD)", "END OF HANDLING PERIOD" , "New Assignment -" ,
     ]
     df = df[~df['REMARK'].str.contains('|'.join(excluded_remarks), case=False, na=False)]
     df = df[~df['CALL STATUS'].str.contains('OTHERS', case=False, na=False)]
-    
-    st.write(f"Data Count After Exclusions: {len(df)}")
-    
-    # Verify counts per remark type
-    st.write("Remark Type Counts:")
-    st.write(df['REMARK TYPE'].value_counts())
     
     # Extract numeric cycle from 'SERVICE NO.'
     df['SERVICE NO.'] = df['SERVICE NO.'].astype(str)
     df['CYCLE'] = df['SERVICE NO.'].str.extract(r'(\d+)')
     df['CYCLE'] = df['CYCLE'].fillna('Unknown')
     df['CYCLE'] = df['CYCLE'].astype(str)
-    
+
     def calculate_summary(df, remark_types, cycle_grouping=False, manual_correction=False):
         summary_columns = [
             'DATE', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
@@ -114,7 +106,7 @@ if uploaded_file is not None:
     st.write(calculate_summary(df, ['Outgoing'], manual_correction=True))
 
     st.write("## Per Cycle Predictive Summary Table")
-    st.dataframe(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Predictive', 'Follow Up'], cycle_grouping=True))
+    st.write(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Predictive', 'Follow Up'], cycle_grouping=True))
 
     st.write("## Per Cycle Manual Summary Table")
-    st.dataframe(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Outgoing'], cycle_grouping=True, manual_correction=True))
+    st.write(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Outgoing'], cycle_grouping=True, manual_correction=True))
