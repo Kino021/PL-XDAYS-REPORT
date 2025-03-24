@@ -1,4 +1,4 @@
-\import streamlit as st
+import streamlit as st
 import pandas as pd
 
 st.set_page_config(layout="wide", page_title="Daily Remark Summary", page_icon="📊", initial_sidebar_state="expanded")
@@ -106,7 +106,7 @@ if uploaded_file is not None:
     st.write(calculate_summary(df, ['Outgoing'], manual_correction=True))
 
     st.write("## Per Cycle Predictive Summary Table")
-    st.write(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Predictive', 'Follow Up'], cycle_grouping=True))
+    st.dataframe(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Predictive', 'Follow Up'], cycle_grouping=True).style.set_properties(**{'border-bottom': '1px solid black'}))
 
     st.write("## Per Cycle Manual Summary Table")
-    st.write(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Outgoing'], cycle_grouping=True, manual_correction=True))
+    st.dataframe(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Outgoing'], cycle_grouping=True, manual_correction=True).style.set_properties(**{'border-bottom': '1px solid black'}))
