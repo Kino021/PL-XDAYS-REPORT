@@ -29,7 +29,7 @@ if uploaded_file is not None:
     
     # Extract numeric cycle from 'SERVICE NO.'
     df['SERVICE NO.'] = df['SERVICE NO.'].astype(str)
-    df['CYCLE'] = df['SERVICE NO.'].str.extract(r'(\d+)')
+    df['CYCLE'] = df['SERVICE NO.'].str.extract(r'(\\d+)')
     df['CYCLE'] = df['CYCLE'].fillna('Unknown')
 
     def calculate_summary(df, remark_types, cycle_grouping=False):
@@ -40,9 +40,18 @@ if uploaded_file is not None:
         ]) 
 
         df_filtered = df[df['REMARK TYPE'].isin(remark_types)]
-        grouping_column = ['DATE', 'CYCLE'] if cycle_grouping else df_filtered['DATE'].dt.date
+        
+        if cycle_grouping:
+            df_filtered['DATE'] = df_filtered['DATE'].dt.date  # Ensure DATE is just the date part
+            grouping_column = ['DATE', 'CYCLE']
+        else:
+            df_filtered['DATE'] = df_filtered['DATE'].dt.date
+            grouping_column = ['DATE']
 
-        for (date, cycle), group in df_filtered.groupby(grouping_column):
+        for group_keys, group in df_filtered.groupby(grouping_column):
+            date = group_keys[0]
+            cycle = group_keys[1] if cycle_grouping else None
+            
             accounts = group['ACCOUNT NO.'].nunique()
             total_dialed = group['ACCOUNT NO.'].count()
             connected = group[group['CALL STATUS'] == 'CONNECTED']['ACCOUNT NO.'].nunique()
