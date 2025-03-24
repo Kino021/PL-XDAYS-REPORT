@@ -35,7 +35,7 @@ if uploaded_file is not None:
 
     def calculate_summary(df, remark_types, manual_correction=False):
         summary_columns = [
-            'DATE', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
+            'DATE', 'CLIENT', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
             'CONNECTED RATE (%)', 'CONNECTED ACC', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
             'TOTAL BALANCE', 'CALL DROP #', 'SYSTEM DROP', 'CALL DROP RATIO #'
         ]
@@ -45,7 +45,7 @@ if uploaded_file is not None:
         df_filtered = df[df['REMARK TYPE'].isin(remark_types)].copy()
         df_filtered['DATE'] = df_filtered['DATE'].dt.date  
 
-        for date, group in df_filtered.groupby('DATE'):
+        for (date, client), group in df_filtered.groupby(['DATE', 'CLIENT']):
             accounts = group['ACCOUNT NO.'].nunique()
             total_dialed = group['ACCOUNT NO.'].count()
             connected = group[group['CALL STATUS'] == 'CONNECTED']['ACCOUNT NO.'].nunique()
@@ -67,6 +67,7 @@ if uploaded_file is not None:
 
             summary_data = {
                 'DATE': date,
+                'CLIENT': client,
                 'ACCOUNTS': accounts,
                 'TOTAL DIALED': total_dialed,
                 'PENETRATION RATE (%)': f"{round(penetration_rate)}%",
