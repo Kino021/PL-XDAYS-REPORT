@@ -33,7 +33,7 @@ if uploaded_file is not None:
     df['CYCLE'] = df['CYCLE'].fillna('Unknown')
     df['CYCLE'] = df['CYCLE'].astype(str)
 
-    def calculate_summary(df, remark_types, cycle_grouping=False):
+    def calculate_summary(df, remark_types, cycle_grouping=False, manual_correction=False):
         summary_columns = [
             'DATE', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
             'CONNECTED RATE (%)', 'CONNECTED ACC', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
@@ -66,7 +66,11 @@ if uploaded_file is not None:
             system_drop = group[(group['STATUS'].str.contains('DROPPED', na=False)) & (group['REMARK BY'] == 'SYSTEM')]['ACCOUNT NO.'].count()
             call_drop_count = group[(group['STATUS'].str.contains('NEGATIVE CALLOUTS - DROP CALL', na=False)) & 
                                     (~group['REMARK BY'].str.upper().isin(['SYSTEM']))]['ACCOUNT NO.'].count()
-            call_drop_ratio = (system_drop / connected_acc * 100) if connected_acc != 0 else 0
+            
+            if manual_correction:
+                call_drop_ratio = (call_drop_count / connected_acc * 100) if connected_acc != 0 else 0
+            else:
+                call_drop_ratio = (system_drop / connected_acc * 100) if connected_acc != 0 else 0
 
             summary_data = {
                 'DATE': date,
@@ -99,10 +103,10 @@ if uploaded_file is not None:
     st.write(calculate_summary(df, ['Predictive', 'Follow Up']))
 
     st.write("## Overall Manual Summary Table")
-    st.write(calculate_summary(df, ['Outgoing']))
+    st.write(calculate_summary(df, ['Outgoing'], manual_correction=True))
 
     st.write("## Per Cycle Predictive Summary Table")
     st.write(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Predictive', 'Follow Up'], cycle_grouping=True))
 
     st.write("## Per Cycle Manual Summary Table")
-    st.write(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Outgoing'], cycle_grouping=True))
+    st.write(calculate_summary(df[df['CYCLE'].ne('Unknown')], ['Outgoing'], cycle_grouping=True, manual_correction=True))
