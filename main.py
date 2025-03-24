@@ -3,78 +3,45 @@ import pandas as pd
 
 st.set_page_config(layout="wide", page_title="Daily Remark Summary", page_icon="📊", initial_sidebar_state="expanded")
 
-# Apply dark mode
-st.markdown(
-    """
-    <style>
-    .reportview-container {
-        background: #2E2E2E;
-        color: white;
-    }
-    .sidebar .sidebar-content {
-        background: #2E2E2E;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 st.title('Daily Remark Summary')
 
 @st.cache_data
 def load_data(uploaded_file):
     df = pd.read_excel(uploaded_file)
-
-    # Clean column names (remove leading/trailing spaces, make uppercase)
     df.columns = df.columns.str.strip().str.upper()
-
-    # Convert 'Date' to datetime if it isn't already
     df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')
-
-    # Exclude rows where the date is a Sunday (weekday() == 6)
-    df = df[df['DATE'].dt.weekday != 6]  # 6 corresponds to Sunday
-
+    df = df[df['DATE'].dt.weekday != 6]  # Exclude Sundays
     return df
 
 uploaded_file = st.sidebar.file_uploader("Upload Daily Remark File", type="xlsx")
 
 if uploaded_file is not None:
     df = load_data(uploaded_file)
-
-    # Exclude rows where 'Debtor' contains 'DEFAULT_LEAD_'
     df = df[~df['DEBTOR'].str.contains("DEFAULT_LEAD_", case=False, na=False)]
-
-    # Exclude rows where STATUS contains 'BP' (Broken Promise) or 'ABORT'
     df = df[~df['STATUS'].str.contains('ABORT', na=False)]
-
-    # Exclude rows where REMARK contains certain keywords or phrases
+    
     excluded_remarks = [
-        "Broken Promise",
-        "New files imported", 
-        "Updates when case reassign to another collector", 
-        "NDF IN ICS", 
-        "FOR PULL OUT (END OF HANDLING PERIOD)", 
-        "END OF HANDLING PERIOD"
+        "Broken Promise", "New files imported", "Updates when case reassign to another collector", 
+        "NDF IN ICS", "FOR PULL OUT (END OF HANDLING PERIOD)", "END OF HANDLING PERIOD"
     ]
     df = df[~df['REMARK'].str.contains('|'.join(excluded_remarks), case=False, na=False)]
-
-    # Exclude rows where "CALL STATUS" contains "OTHERS"
     df = df[~df['CALL STATUS'].str.contains('OTHERS', case=False, na=False)]
-
-    # Ensure 'SERVICE NO.' is treated as a string before extracting cycle
+    
+    # Extract numeric cycle from 'SERVICE NO.'
     df['SERVICE NO.'] = df['SERVICE NO.'].astype(str)
-    df['CYCLE'] = df['SERVICE NO.'].str.extract(r'(CYCLE \d+)')
+    df['CYCLE'] = df['SERVICE NO.'].str.extract(r'(\d+)')
+    df['CYCLE'] = df['CYCLE'].fillna('Unknown')
 
     def calculate_summary(df, remark_types, cycle_grouping=False):
-        summary_table = pd.DataFrame(columns=[ 
+        summary_table = pd.DataFrame(columns=[
             'CYCLE' if cycle_grouping else 'DAY', 'ACCOUNTS', 'TOTAL DIALED', 'PENETRATION RATE (%)', 'CONNECTED #', 
             'CONNECTED RATE (%)', 'CONNECTED ACC', 'PTP ACC', 'PTP RATE', 'TOTAL PTP AMOUNT', 
             'TOTAL BALANCE', 'CALL DROP #', 'SYSTEM DROP', 'CALL DROP RATIO #'
         ]) 
 
         df_filtered = df[df['REMARK TYPE'].isin(remark_types)]
-
         grouping_column = 'CYCLE' if cycle_grouping else df_filtered['DATE'].dt.date
+
         for cycle, group in df_filtered.groupby(grouping_column):
             accounts = group['ACCOUNT NO.'].nunique()
             total_dialed = group['ACCOUNT NO.'].count()
@@ -110,23 +77,17 @@ if uploaded_file is not None:
 
         return summary_table
 
-    # Display summaries
     st.write("## Overall Combined Summary Table")
-    combined_summary_table = calculate_summary(df, ['Predictive', 'Follow Up', 'Outgoing'])
-    st.write(combined_summary_table)
+    st.write(calculate_summary(df, ['Predictive', 'Follow Up', 'Outgoing']))
 
     st.write("## Overall Predictive Summary Table")
-    predictive_summary_table = calculate_summary(df, ['Predictive', 'Follow Up'])
-    st.write(predictive_summary_table)
+    st.write(calculate_summary(df, ['Predictive', 'Follow Up']))
 
     st.write("## Overall Manual Summary Table")
-    manual_summary_table = calculate_summary(df, ['Outgoing'])
-    st.write(manual_summary_table)
+    st.write(calculate_summary(df, ['Outgoing']))
 
     st.write("## Per Cycle Predictive Summary Table")
-    cycle_predictive_summary = calculate_summary(df[df['CYCLE'].notna()], ['Predictive', 'Follow Up'], cycle_grouping=True)
-    st.write(cycle_predictive_summary)
+    st.write(calculate_summary(df[df['CYCLE'] != 'Unknown'], ['Predictive', 'Follow Up'], cycle_grouping=True))
 
     st.write("## Per Cycle Manual Summary Table")
-    cycle_manual_summary = calculate_summary(df[df['CYCLE'].notna()], ['Outgoing'], cycle_grouping=True)
-    st.write(cycle_manual_summary)
+    st.write(calculate_summary(df[df['CYCLE'] != 'Unknown'], ['Outgoing'], cycle_grouping=True))
