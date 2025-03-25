@@ -113,55 +113,58 @@ if uploaded_file is not None:
     with col2:
         st.write("## Overall Summary per Client")
 
-        overall_summary = []
-
         # Format the date range string
         date_range_str = f"{start_date.strftime('%b %d %Y').upper()} - {end_date.strftime('%b %d %Y').upper()}"
 
         # Calculate average collectors per client from summary_df and round up if .5 or greater
         avg_collectors_per_client = summary_df.groupby('Client')['Collectors'].mean().apply(lambda x: math.ceil(x) if x % 1 >= 0.5 else round(x))
 
-        # Group by 'Client' only
+        # Group by 'Client' and create separate containers
         for client, client_group in filtered_df.groupby('Client'):
-            # Use the rounded average collectors from summary_df
-            total_agents = avg_collectors_per_client[client]
-            total_connected = client_group[client_group['Call Status'] == 'CONNECTED']['Account No.'].count()
+            with st.container():
+                st.subheader(f"Client: {client}")
+                
+                overall_summary = []
 
-            # Sum Talk Time Duration in seconds
-            total_talk_time_seconds = client_group['Talk Time Duration'].sum()
+                # Use the rounded average collectors from summary_df
+                total_agents = avg_collectors_per_client[client]
+                total_connected = client_group[client_group['Call Status'] == 'CONNECTED']['Account No.'].count()
 
-            # Convert total talk time to HH:MM:SS format without days
-            hours, remainder = divmod(int(total_talk_time_seconds), 3600)
-            minutes, seconds = divmod(remainder, 60)
-            formatted_talk_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                # Sum Talk Time Duration in seconds
+                total_talk_time_seconds = client_group['Talk Time Duration'].sum()
 
-            # Calculate average talk time per agent using the rounded average collectors
-            talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
+                # Convert total talk time to HH:MM:SS format without days
+                hours, remainder = divmod(int(total_talk_time_seconds), 3600)
+                minutes, seconds = divmod(remainder, 60)
+                formatted_talk_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
-            # Convert average talk time to HH:MM:SS format without days
-            ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
-            ave_minutes, ave_seconds = divmod(ave_remainder, 60)
-            talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
+                # Calculate average talk time per agent using the rounded average collectors
+                talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
 
-            # Count Positive Skip
-            positive_skip_count = sum(client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))
+                # Convert average talk time to HH:MM:SS format without days
+                ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
+                ave_minutes, ave_seconds = divmod(ave_remainder, 60)
+                talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
 
-            # Count Negative Skip
-            negative_skip_count = client_group[client_group['Status'].isin(negative_skip_status)].shape[0]
+                # Count Positive Skip
+                positive_skip_count = sum(client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))
 
-            # Calculate Total Skip
-            total_skip = positive_skip_count + negative_skip_count
+                # Count Negative Skip
+                negative_skip_count = client_group[client_group['Status'].isin(negative_skip_status)].shape[0]
 
-            # Calculate connected average per agent using the rounded average collectors
-            connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
+                # Calculate Total Skip
+                total_skip = positive_skip_count + negative_skip_count
 
-            # Append results to the overall summary with date range as first column
-            overall_summary.append([
-                date_range_str, client, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
-            ])
+                # Calculate connected average per agent using the rounded average collectors
+                connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
-        # Convert to DataFrame and display with Date Range column
-        overall_summary_df = pd.DataFrame(overall_summary, columns=[
-            'Date Range', 'Client', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
-        ])
-        st.write(overall_summary_df)
+                # Append results to the overall summary with date range
+                overall_summary.append([
+                    date_range_str, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
+                ])
+
+                # Convert to DataFrame and display for this client
+                overall_summary_df = pd.DataFrame(overall_summary, columns=[
+                    'Date Range', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+                ])
+                st.write(overall_summary_df)
