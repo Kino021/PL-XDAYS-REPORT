@@ -17,18 +17,13 @@ def load_data(uploaded_file):
     return df
 
 # Function to create a single Excel file with multiple sheets
-def get_combined_excel_download_link(summary_dfs, overall_summary_df, filename):
+def create_combined_excel_file(summary_dfs, overall_summary_df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Write each client's Summary Table by Day to a separate sheet
         for client, summary_df in summary_dfs.items():
             summary_df.to_excel(writer, sheet_name=f"Summary_{client[:31]}", index=False)  # Sheet names limited to 31 chars
-        # Write Overall Summary to a separate sheet
         overall_summary_df.to_excel(writer, sheet_name="Overall_Summary", index=False)
-    excel_data = output.getvalue()
-    b64 = base64.b64encode(excel_data).decode()
-    href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{filename}">Download All Results as Excel</a>'
-    return href
+    return output.getvalue()
 
 # File uploader for Excel file
 uploaded_file = st.sidebar.file_uploader("Upload Daily Remark File", type="xlsx")
@@ -125,7 +120,6 @@ if uploaded_file is not None:
                     'Talk Time (HH:MM:SS)', 'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Connected Ave', 'Talk Time Ave'
                 ])
                 st.dataframe(summary_df)
-                # Store the DataFrame for this client
                 summary_dfs[client] = summary_df
 
     with col2:
@@ -178,5 +172,16 @@ if uploaded_file is not None:
             ])
             st.dataframe(overall_summary_df)
 
-        # Add a single download button for all results
-        st.markdown(get_combined_excel_download_link(summary_dfs, overall_summary_df, "MC06_Monitoring_Results.xlsx"), unsafe_allow_html=True)
+            # Generate the Excel file content
+            excel_data = create_combined_excel_file(summary_dfs, overall_summary_df)
+
+            # Use st.button to trigger the download via a hidden download link
+            if st.button("Download All Results"):
+                b64 = base64.b64encode(excel_data).decode()
+                href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="MC06_Monitoring_Results.xlsx" id="download_link" style="display:none;">Download</a>'
+                st.markdown(href, unsafe_allow_html=True)
+                st.markdown("""
+                <script>
+                document.getElementById('download_link').click();
+                </script>
+                """, unsafe_allow_html=True)
