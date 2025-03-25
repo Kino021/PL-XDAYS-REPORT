@@ -107,19 +107,22 @@ if uploaded_file is not None:
                     # Calculate Negative Skip Average (Negative Skip / Collectors)
                     negative_skip_ave = round(negative_skip_count / total_agents, 2) if total_agents > 0 else 0
 
+                    # Calculate Total Skip Average (Total Skip / Collectors)
+                    total_skip_ave = round(total_skip / total_agents, 2) if total_agents > 0 else 0
+
                     # Calculate connected average per agent
                     connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
                     # Append results to the summary table for this client
                     summary_table.append([
                         date, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip,
-                        positive_skip_ave, negative_skip_ave, formatted_talk_time, connected_ave, talk_time_ave_str
+                        positive_skip_ave, negative_skip_ave, total_skip_ave, formatted_talk_time, connected_ave, talk_time_ave_str
                     ])
 
                 # Convert to DataFrame and display for this client
                 summary_df = pd.DataFrame(summary_table, columns=[
                     'Day', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
-                    'Positive Skip Ave', 'Negative Skip Ave', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+                    'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
                 ])
                 st.write(summary_df)
 
