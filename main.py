@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import math
 
 # Set up the page configuration
 st.set_page_config(layout="wide", page_title="MC06 MONITORING", page_icon="📊", initial_sidebar_state="expanded")
@@ -112,12 +113,12 @@ if uploaded_file is not None:
 
         overall_summary = []
 
-        # Calculate average collectors per client from summary_df
-        avg_collectors_per_client = summary_df.groupby('Client')['Collectors'].mean().round(2)
+        # Calculate average collectors per client from summary_df and round up if .5 or greater
+        avg_collectors_per_client = summary_df.groupby('Client')['Collectors'].mean().apply(lambda x: math.ceil(x) if x % 1 >= 0.5 else round(x))
 
         # Group by 'Client' only
         for client, client_group in filtered_df.groupby('Client'):
-            # Use the average collectors from summary_df instead of recalculating
+            # Use the rounded average collectors from summary_df
             total_agents = avg_collectors_per_client[client]
             total_connected = client_group[client_group['Call Status'] == 'CONNECTED']['Account No.'].count()
 
@@ -127,7 +128,7 @@ if uploaded_file is not None:
             # Convert total talk time to HH:MM:SS format
             formatted_talk_time = str(pd.to_timedelta(total_talk_time_seconds, unit='s'))
 
-            # Calculate average talk time per agent using the average collectors
+            # Calculate average talk time per agent using the rounded average collectors
             talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
 
             # Convert average talk time to HH:MM:SS format
@@ -142,7 +143,7 @@ if uploaded_file is not None:
             # Calculate Total Skip
             total_skip = positive_skip_count + negative_skip_count
 
-            # Calculate connected average per agent using the average collectors
+            # Calculate connected average per agent using the rounded average collectors
             connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
             # Append results to the overall summary
