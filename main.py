@@ -30,38 +30,22 @@ if uploaded_file is not None:
 
     # Define Positive Skip conditions (count if Status CONTAINS these keywords)
     positive_skip_keywords = [
-        "BRGY SKIPTRACE_POS - LEAVE MESSAGE CALL SMS",
         "BRGY SKIPTRACE_POS - LEAVE MESSAGE FACEBOOK",
         "POS VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
         "POSITIVE VIA DIGITAL SKIP - FACEBOOK",
-        "POSITIVE VIA DIGITAL SKIP - GOOGLE SEARCH",
-        "POSITIVE VIA DIGITAL SKIP - INSTAGRAM",
-        "POSITIVE VIA DIGITAL SKIP - LINKEDIN",
-        "POSITIVE VIA DIGITAL SKIP - OTHER SOCMED",
-        "POSITIVE VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
         "POSITIVE VIA DIGITAL SKIP - VIBER",
         "RPC_POS SKIP WITH REPLY - OTHER SOCMED",
         "RPC_POSITIVE SKIP WITH REPLY - FACEBOOK",
-        "RPC_POSITIVE SKIP WITH REPLY - GOOGLE SEARCH",
-        "RPC_POSITIVE SKIP WITH REPLY - INSTAGRAM",
-        "RPC_POSITIVE SKIP WITH REPLY - LINKEDIN",
-        "RPC_POSITIVE SKIP WITH REPLY - OTHER SOCMED PLATFORMS",
-        "RPC_POSITIVE SKIP WITH REPLY - VIBER",
+        "RPC_POSITIVE SKIP WITH REPLY - VIBER"
     ]
 
     # Define Negative Skip status conditions
     negative_skip_status = [
-        "BRGY SKIP TRACING_NEGATIVE - CLIENT UNKNOWN",
-        "BRGY SKIP TRACING_NEGATIVE - MOVED OUT",
-        "BRGY SKIP TRACING_NEGATIVE - UNCONTACTED",
-        "NEG VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
         "NEGATIVE VIA DIGITAL SKIP - FACEBOOK",
-        "NEGATIVE VIA DIGITAL SKIP - GOOGLE SEARCH",
-        "NEGATIVE VIA DIGITAL SKIP - INSTAGRAM",
-        "NEGATIVE VIA DIGITAL SKIP - LINKEDIN",
-        "NEGATIVE VIA DIGITAL SKIP - OTHER SOCMED",
-        "NEGATIVE VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
         "NEGATIVE VIA DIGITAL SKIP - VIBER",
+        "NEG VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
+        "BRGY SKIP TRACING_NEGATIVE - CLIENT UNKNOWN",
+        "BRGY SKIP TRACING_NEGATIVE - MOVED OUT"
     ]
 
     # Create Streamlit columns layout
@@ -117,7 +101,7 @@ if uploaded_file is not None:
 
         # Convert to DataFrame and display
         summary_df = pd.DataFrame(summary_table, columns=[
-            'Day', 'Client', 'Total Agents', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+            'Day', 'Client', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
         ])
         st.write(summary_df)
 
@@ -128,9 +112,13 @@ if uploaded_file is not None:
 
         overall_summary = []
 
+        # Calculate average collectors per client from summary_df
+        avg_collectors_per_client = summary_df.groupby('Client')['Collectors'].mean().round(2)
+
         # Group by 'Client' only
         for client, client_group in filtered_df.groupby('Client'):
-            total_agents = client_group['Remark By'].nunique()
+            # Use the average collectors from summary_df instead of recalculating
+            total_agents = avg_collectors_per_client[client]
             total_connected = client_group[client_group['Call Status'] == 'CONNECTED']['Account No.'].count()
 
             # Sum Talk Time Duration in seconds
@@ -139,7 +127,7 @@ if uploaded_file is not None:
             # Convert total talk time to HH:MM:SS format
             formatted_talk_time = str(pd.to_timedelta(total_talk_time_seconds, unit='s'))
 
-            # Calculate average talk time per agent
+            # Calculate average talk time per agent using the average collectors
             talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
 
             # Convert average talk time to HH:MM:SS format
@@ -154,7 +142,7 @@ if uploaded_file is not None:
             # Calculate Total Skip
             total_skip = positive_skip_count + negative_skip_count
 
-            # Calculate connected average per agent
+            # Calculate connected average per agent using the average collectors
             connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
             # Append results to the overall summary
@@ -162,8 +150,8 @@ if uploaded_file is not None:
                 client, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
             ])
 
-        # Convert to DataFrame and display - corrected column list
+        # Convert to DataFrame and display
         overall_summary_df = pd.DataFrame(overall_summary, columns=[
-            'Client', 'Total Agents', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+            'Client', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
         ])
         st.write(overall_summary_df)
