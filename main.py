@@ -74,14 +74,18 @@ if uploaded_file is not None:
             # Sum Talk Time Duration in seconds
             total_talk_time_seconds = date_group['Talk Time Duration'].sum()
 
-            # Convert total talk time to HH:MM:SS format
-            formatted_talk_time = str(pd.to_timedelta(total_talk_time_seconds, unit='s'))
+            # Convert total talk time to HH:MM:SS format without days
+            hours, remainder = divmod(int(total_talk_time_seconds), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            formatted_talk_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
             # Calculate average talk time per agent
             talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
 
-            # Convert average talk time to HH:MM:SS format
-            talk_time_ave_str = str(pd.to_timedelta(round(talk_time_ave_seconds), unit='s'))
+            # Convert average talk time to HH:MM:SS format without days
+            ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
+            ave_minutes, ave_seconds = divmod(ave_remainder, 60)
+            talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
 
             # Count Positive Skip
             positive_skip_count = sum(date_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))
@@ -125,14 +129,18 @@ if uploaded_file is not None:
             # Sum Talk Time Duration in seconds
             total_talk_time_seconds = client_group['Talk Time Duration'].sum()
 
-            # Convert total talk time to HH:MM:SS format
-            formatted_talk_time = str(pd.to_timedelta(total_talk_time_seconds, unit='s'))
+            # Convert total talk time to HH:MM:SS format without days
+            hours, remainder = divmod(int(total_talk_time_seconds), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            formatted_talk_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
             # Calculate average talk time per agent using the rounded average collectors
             talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
 
-            # Convert average talk time to HH:MM:SS format
-            talk_time_ave_str = str(pd.to_timedelta(round(talk_time_ave_seconds), unit='s'))
+            # Convert average talk time to HH:MM:SS format without days
+            ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
+            ave_minutes, ave_seconds = divmod(ave_remainder, 60)
+            talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
 
             # Count Positive Skip
             positive_skip_count = sum(client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))
