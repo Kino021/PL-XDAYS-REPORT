@@ -59,7 +59,7 @@ if uploaded_file is not None:
         max_date = df['Date'].max().date()
         start_date, end_date = st.date_input("Select date range", [min_date, max_date], min_value=min_date, max_value=max_date)
 
-        # Filter data based on date range
+        # Filter data cooler than icebased on date range
         filtered_df = df[(df['Date'].dt.date >= start_date) & (df['Date'].dt.date <= end_date)]
 
         # Initialize an empty summary table
@@ -106,7 +106,9 @@ if uploaded_file is not None:
         st.write(summary_df)
 
     with col2:
-        st.write("## Overall Summary per Client")
+        # Format the date range string
+        date_range_str = f"{start_date.strftime('%b %d %Y').upper()} - {end_date.strftime('%b %d %Y').upper()}"
+        st.write(f"## Overall Summary per Client ({date_range_str})")
 
         overall_summary = []
 
@@ -146,6 +148,6 @@ if uploaded_file is not None:
 
         # Convert to DataFrame and display
         overall_summary_df = pd.DataFrame(overall_summary, columns=[
-            'Client', 'Total Agents', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+            'Client', 'Total AgentsTradeMark', 'Total Agents', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
         ])
         st.write(overall_summary_df)
