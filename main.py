@@ -21,7 +21,6 @@ def load_data(uploaded_file):
 def create_combined_excel_file(summary_dfs, overall_summary_df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Define formats
         workbook = writer.book
         header_format = workbook.add_format({
             'bg_color': '#FF0000',  # Red background
@@ -48,65 +47,39 @@ def create_combined_excel_file(summary_dfs, overall_summary_df):
             'valign': 'vcenter'
         })
 
-        # Write each client's Summary Table by Day to a separate sheet
         for client, summary_df in summary_dfs.items():
             summary_df.to_excel(writer, sheet_name=f"Summary_{client[:31]}", index=False, startrow=1, header=False)
             worksheet = writer.sheets[f"Summary_{client[:31]}"]
-
-            # Write headers with red background
             for col_idx, col in enumerate(summary_df.columns):
                 worksheet.write(0, col_idx, col, header_format)
-
-            # Apply cell format to data, with special handling for 'Day' column
             for row_idx in range(len(summary_df)):
                 for col_idx, value in enumerate(summary_df.iloc[row_idx]):
                     if col_idx == 0:  # 'Day' column
                         worksheet.write_datetime(row_idx + 1, col_idx, value, date_format)
                     else:
                         worksheet.write(row_idx + 1, col_idx, value, cell_format)
-
-            # Auto-fit columns
             for col_idx, col in enumerate(summary_df.columns):
-                if col_idx == 0:  # 'Day' column
-                    max_length = max(
-                        summary_df[col].astype(str).map(lambda x: len('MMM DD, YYYY')).max(),
-                        len(str(col))
-                    )
+                if col_idx == 0:
+                    max_length = max(summary_df[col].astype(str).map(lambda x: len('MMM DD, YYYY')).max(), len(str(col)))
                 else:
-                    max_length = max(
-                        summary_df[col].astype(str).map(len).max(),
-                        len(str(col))
-                    )
+                    max_length = max(summary_df[col].astype(str).map(len).max(), len(str(col)))
                 worksheet.set_column(col_idx, col_idx, max_length + 2)
 
-        # Write Overall Summary to a separate sheet
         overall_summary_df.to_excel(writer, sheet_name="Overall_Summary", index=False, startrow=1, header=False)
         worksheet = writer.sheets["Overall_Summary"]
-
-        # Write headers with red background
         for col_idx, col in enumerate(overall_summary_df.columns):
             worksheet.write(0, col_idx, col, header_format)
-
-        # Apply cell format to data, with special handling for 'Date Range' column
         for row_idx in range(len(overall_summary_df)):
             for col_idx, value in enumerate(overall_summary_df.iloc[row_idx]):
                 if col_idx == 0:  # 'Date Range' column
                     worksheet.write(row_idx + 1, col_idx, value, date_range_format)
                 else:
                     worksheet.write(row_idx + 1, col_idx, value, cell_format)
-
-        # Auto-fit columns
         for col_idx, col in enumerate(overall_summary_df.columns):
-            if col_idx == 0:  # 'Date Range' column
-                max_length = max(
-                    overall_summary_df[col].astype(str).map(len).max(),
-                    len(str(col))
-                )
+            if col_idx == 0:
+                max_length = max(overall_summary_df[col].astype(str).map(len).max(), len(str(col)))
             else:
-                max_length = max(
-                    overall_summary_df[col].astype(str).map(len).max(),
-                    len(str(col))
-                )
+                max_length = max(overall_summary_df[col].astype(str).map(len).max(), len(str(col)))
             worksheet.set_column(col_idx, col_idx, max_length + 2)
 
     return output.getvalue()
@@ -126,10 +99,11 @@ if uploaded_file is not None:
     # Ensure 'Date' column is in datetime format
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
-    # Ensure 'Talk Time Duration' is numeric
+    # Ensure 'Talk Time Duration' and 'Call Duration' are numeric
     df['Talk Time Duration'] = pd.to_numeric(df['Talk Time Duration'], errors='coerce').fillna(0)
+    df['Call Duration'] = pd.to_numeric(df['Call Duration'], errors='coerce').fillna(0)
 
-    # Define Positive Skip conditions (count if Status CONTAINS these keywords)
+    # Define Positive Skip conditions
     positive_skip_keywords = [
         "BRGY SKIPTRACE_POS - LEAVE MESSAGE CALL SMS",
         "BRGY SKIPTRACE_POS - LEAVE MESSAGE FACEBOOK",
@@ -180,7 +154,11 @@ if uploaded_file is not None:
                 st.subheader(f"Client: {client}")
                 summary_table = []
                 for date, date_group in client_group.groupby(client_group['Date'].dt.date):
-                    total_agents = date_group['Remark By'].nunique()
+                    # Filter rows where Call Duration has a value (non-zero, non-null) and exclude "system"
+                    valid_group = date_group[(date_group['Call Duration'].notna()) & 
+                                            (date_group['Call Duration'] > 0) & 
+                                            (date_group['Remark By'].str.lower() != "system")]
+                    total_agents = valid_group['Remark By'].nunique()  # Unique collectors excluding "system"
                     total_connected = date_group[date_group['Call Status'] == 'CONNECTED']['Account No.'].count()
                     total_talk_time_seconds = date_group['Talk Time Duration'].sum()
                     hours, remainder = divmod(int(total_talk_time_seconds), 3600)
@@ -212,10 +190,15 @@ if uploaded_file is not None:
         st.write("## Overall Summary per Client")
         with st.container():
             date_range_str = f"{start_date.strftime('%b %d %Y').upper()} - {end_date.strftime('%b %d %Y').upper()}"
-            avg_collectors_per_client = filtered_df.groupby(['Client', filtered_df['Date'].dt.date])['Remark By'].nunique().groupby('Client').mean().apply(lambda x: math.ceil(x) if x % 1 >= 0.5 else round(x))
+            # Calculate average collectors per client based on Call Duration
+            valid_df = filtered_df[(filtered_df['Call Duration'].notna()) & 
+                                  (filtered_df['Call Duration'] > 0) & 
+                                  (filtered_df['Remark By'].str.lower() != "system")]
+            avg_collectors_per_client = valid_df.groupby(['Client', valid_df['Date'].dt.date])['Remark By'].nunique().groupby('Client').mean().apply(lambda x: math.ceil(x) if x % 1 >= 0.5 else round(x))
+
             overall_summary = []
             for client, client_group in filtered_df.groupby('Client'):
-                total_agents = avg_collectors_per_client[client]
+                total_agents = avg_collectors_per_client.get(client, 0)  # Use 0 if no valid data
                 total_connected = client_group[client_group['Call Status'] == 'CONNECTED']['Account No.'].count()
                 total_talk_time_seconds = client_group['Talk Time Duration'].sum()
                 hours, remainder = divmod(int(total_talk_time_seconds), 3600)
@@ -225,7 +208,9 @@ if uploaded_file is not None:
                 negative_skip_count = client_group[client_group['Status'].isin(negative_skip_status)].shape[0]
                 total_skip = positive_skip_count + negative_skip_count
                 daily_data = client_group.groupby(client_group['Date'].dt.date).agg({
-                    'Remark By': 'nunique',
+                    'Remark By': lambda x: x[(client_group['Call Duration'].notna()) & 
+                                            (client_group['Call Duration'] > 0) & 
+                                            (client_group['Remark By'].str.lower() != "system")].nunique(),
                     'Talk Time Duration': 'sum',
                     'Account No.': lambda x: x[client_group['Call Status'] == 'CONNECTED'].count(),
                     'Status': [
