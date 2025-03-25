@@ -31,38 +31,22 @@ if uploaded_file is not None:
 
     # Define Positive Skip conditions (count if Status CONTAINS these keywords)
     positive_skip_keywords = [
-        "BRGY SKIPTRACE_POS - LEAVE MESSAGE CALL SMS",
         "BRGY SKIPTRACE_POS - LEAVE MESSAGE FACEBOOK",
         "POS VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
         "POSITIVE VIA DIGITAL SKIP - FACEBOOK",
-        "POSITIVE VIA DIGITAL SKIP - GOOGLE SEARCH",
-        "POSITIVE VIA DIGITAL SKIP - INSTAGRAM",
-        "POSITIVE VIA DIGITAL SKIP - LINKEDIN",
-        "POSITIVE VIA DIGITAL SKIP - OTHER SOCMED",
-        "POSITIVE VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
         "POSITIVE VIA DIGITAL SKIP - VIBER",
         "RPC_POS SKIP WITH REPLY - OTHER SOCMED",
         "RPC_POSITIVE SKIP WITH REPLY - FACEBOOK",
-        "RPC_POSITIVE SKIP WITH REPLY - GOOGLE SEARCH",
-        "RPC_POSITIVE SKIP WITH REPLY - INSTAGRAM",
-        "RPC_POSITIVE SKIP WITH REPLY - LINKEDIN",
-        "RPC_POSITIVE SKIP WITH REPLY - OTHER SOCMED PLATFORMS",
-        "RPC_POSITIVE SKIP WITH REPLY - VIBER",
+        "RPC_POSITIVE SKIP WITH REPLY - VIBER"
     ]
 
     # Define Negative Skip status conditions
     negative_skip_status = [
-        "BRGY SKIP TRACING_NEGATIVE - CLIENT UNKNOWN",
-        "BRGY SKIP TRACING_NEGATIVE - MOVED OUT",
-        "BRGY SKIP TRACING_NEGATIVE - UNCONTACTED",
-        "NEG VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
         "NEGATIVE VIA DIGITAL SKIP - FACEBOOK",
-        "NEGATIVE VIA DIGITAL SKIP - GOOGLE SEARCH",
-        "NEGATIVE VIA DIGITAL SKIP - INSTAGRAM",
-        "NEGATIVE VIA DIGITAL SKIP - LINKEDIN",
-        "NEGATIVE VIA DIGITAL SKIP - OTHER SOCMED",
-        "NEGATIVE VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
-        "NEGATIVE VIA DIGITAL SKIP - VIBER",    
+        "NEGATIVE VIA DIGITAL SKIP - VIBER",
+        "NEG VIA DIGITAL SKIP - OTHER SOCMED PLATFORMS",
+        "BRGY SKIP TRACING_NEGATIVE - CLIENT UNKNOWN",
+        "BRGY SKIP TRACING_NEGATIVE - MOVED OUT"
     ]
 
     # Create Streamlit columns layout
@@ -145,19 +129,19 @@ if uploaded_file is not None:
     with col2:
         st.write("## Overall Summary per Client")
 
-        # Format the date range string
-        date_range_str = f"{start_date.strftime('%b %d %Y').upper()} - {end_date.strftime('%b %d %Y').upper()}"
+        # Single container for all clients
+        with st.container():
+            # Format the date range string
+            date_range_str = f"{start_date.strftime('%b %d %Y').upper()} - {end_date.strftime('%b %d %Y').upper()}"
 
-        # Calculate average collectors per client from filtered_df and round up if .5 or greater
-        avg_collectors_per_client = filtered_df.groupby(['Client', filtered_df['Date'].dt.date])['Remark By'].nunique().groupby('Client').mean().apply(lambda x: math.ceil(x) if x % 1 >= 0.5 else round(x))
+            # Calculate average collectors per client from filtered_df and round up if .5 or greater
+            avg_collectors_per_client = filtered_df.groupby(['Client', filtered_df['Date'].dt.date])['Remark By'].nunique().groupby('Client').mean().apply(lambda x: math.ceil(x) if x % 1 >= 0.5 else round(x))
 
-        # Group by 'Client' and create separate containers
-        for client, client_group in filtered_df.groupby('Client'):
-            with st.container():
-                st.subheader(f"Client: {client}")
-                
-                overall_summary = []
+            # Initialize a single summary list for all clients
+            overall_summary = []
 
+            # Group by 'Client' and add all data to one table
+            for client, client_group in filtered_df.groupby('Client'):
                 # Use the rounded average collectors
                 total_agents = avg_collectors_per_client[client]
                 total_connected = client_group[client_group['Call Status'] == 'CONNECTED']['Account No.'].count()
@@ -199,15 +183,15 @@ if uploaded_file is not None:
                 # Calculate connected average per agent using the rounded average collectors
                 connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
-                # Append results to the overall summary with new averages after Total Skip and before Talk Time
+                # Append results to the overall summary with Client after Date Range
                 overall_summary.append([
-                    date_range_str, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip,
+                    date_range_str, client, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip,
                     positive_skip_ave, negative_skip_ave, total_skip_ave, formatted_talk_time, connected_ave, talk_time_ave_str
                 ])
 
-                # Convert to DataFrame and display for this client with new averages
-                overall_summary_df = pd.DataFrame(overall_summary, columns=[
-                    'Date Range', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
-                    'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
-                ])
-                st.write(overall_summary_df)
+            # Convert to DataFrame and display all clients in one table
+            overall_summary_df = pd.DataFrame(overall_summary, columns=[
+                'Date Range', 'Client', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
+                'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+            ])
+            st.write(overall_summary_df)
