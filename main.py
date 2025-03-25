@@ -111,11 +111,12 @@ if uploaded_file is not None:
         st.write(summary_df)
 
     with col2:
-        # Format the date range string
-        date_range_str = f"{start_date.strftime('%b %d %Y').upper()} - {end_date.strftime('%b %d %Y').upper()}"
-        st.write(f"## Overall Summary per Client ({date_range_str})")
+        st.write("## Overall Summary per Client")
 
         overall_summary = []
+
+        # Format the date range string
+        date_range_str = f"{start_date.strftime('%b %d %Y').upper()} - {end_date.strftime('%b %d %Y').upper()}"
 
         # Calculate average collectors per client from summary_df and round up if .5 or greater
         avg_collectors_per_client = summary_df.groupby('Client')['Collectors'].mean().apply(lambda x: math.ceil(x) if x % 1 >= 0.5 else round(x))
@@ -154,13 +155,13 @@ if uploaded_file is not None:
             # Calculate connected average per agent using the rounded average collectors
             connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
-            # Append results to the overall summary
+            # Append results to the overall summary with date range as first column
             overall_summary.append([
-                client, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
+                date_range_str, client, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
             ])
 
-        # Convert to DataFrame and display
+        # Convert to DataFrame and display with Date Range column
         overall_summary_df = pd.DataFrame(overall_summary, columns=[
-            'Client', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+            'Date Range', 'Client', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
         ])
         st.write(overall_summary_df)
