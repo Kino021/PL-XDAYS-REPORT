@@ -59,7 +59,7 @@ if uploaded_file is not None:
         max_date = df['Date'].max().date()
         start_date, end_date = st.date_input("Select date range", [min_date, max_date], min_value=min_date, max_value=max_date)
 
-        # Filter data cooler than icebased on date range
+        # Filter data based on date range
         filtered_df = df[(df['Date'].dt.date >= start_date) & (df['Date'].dt.date <= end_date)]
 
         # Initialize an empty summary table
@@ -146,8 +146,8 @@ if uploaded_file is not None:
                 client, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
             ])
 
-        # Convert to DataFrame and display
+        # Convert to DataFrame and display - corrected column list
         overall_summary_df = pd.DataFrame(overall_summary, columns=[
-            'Client', 'Total AgentsTradeMark', 'Total Agents', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+            'Client', 'Total Agents', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
         ])
         st.write(overall_summary_df)
