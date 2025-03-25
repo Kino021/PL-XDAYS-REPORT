@@ -13,9 +13,11 @@ st.title('MC06 MONITORING')
 @st.cache_data
 def load_data(uploaded_file):
     df = pd.read_excel(uploaded_file)
+    # Filter out rows where 'Remark' contains "broken promise" (case-insensitive)
+    df = df[~df['Remark'].astype(str).str.contains("broken promise", case=False, na=False)]
     return df
 
-# Function to create a single Excel file with formatted dates, borders, middle alignment, and red headers
+# Function to create a single Excel file with multiple sheets, auto-fit columns, borders, middle alignment, red headers, and custom date formats
 def create_combined_excel_file(summary_dfs, overall_summary_df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -35,7 +37,12 @@ def create_combined_excel_file(summary_dfs, overall_summary_df):
             'valign': 'vcenter'
         })
         date_format = workbook.add_format({
-            'num_format': 'mm/dd/yyyy',  # Date format for "Day" column
+            'num_format': 'mmm dd, yyyy',  # e.g., Mar 25, 2025
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
+        date_range_format = workbook.add_format({
             'border': 1,
             'align': 'center',
             'valign': 'vcenter'
@@ -50,24 +57,26 @@ def create_combined_excel_file(summary_dfs, overall_summary_df):
             for col_idx, col in enumerate(summary_df.columns):
                 worksheet.write(0, col_idx, col, header_format)
 
-            # Apply cell format to data, using date format for "Day" column (column 0)
+            # Apply cell format to data, with special handling for 'Day' column
             for row_idx in range(len(summary_df)):
                 for col_idx, value in enumerate(summary_df.iloc[row_idx]):
-                    if col_idx == 0:  # "Day" column
-                        # Convert to datetime if not already, then write with date format
-                        if pd.isna(value):
-                            worksheet.write(row_idx + 1, col_idx, value, date_format)
-                        else:
-                            worksheet.write_datetime(row_idx + 1, col_idx, pd.to_datetime(value), date_format)
+                    if col_idx == 0:  # 'Day' column
+                        worksheet.write_datetime(row_idx + 1, col_idx, value, date_format)
                     else:
                         worksheet.write(row_idx + 1, col_idx, value, cell_format)
 
             # Auto-fit columns
             for col_idx, col in enumerate(summary_df.columns):
-                max_length = max(
-                    summary_df[col].astype(str).map(len).max(),
-                    len(str(col))
-                )
+                if col_idx == 0:  # 'Day' column
+                    max_length = max(
+                        summary_df[col].astype(str).map(lambda x: len('MMM DD, YYYY')).max(),
+                        len(str(col))
+                    )
+                else:
+                    max_length = max(
+                        summary_df[col].astype(str).map(len).max(),
+                        len(str(col))
+                    )
                 worksheet.set_column(col_idx, col_idx, max_length + 2)
 
         # Write Overall Summary to a separate sheet
@@ -78,17 +87,26 @@ def create_combined_excel_file(summary_dfs, overall_summary_df):
         for col_idx, col in enumerate(overall_summary_df.columns):
             worksheet.write(0, col_idx, col, header_format)
 
-        # Apply cell format to data, keeping "Date Range" as text
+        # Apply cell format to data, with special handling for 'Date Range' column
         for row_idx in range(len(overall_summary_df)):
             for col_idx, value in enumerate(overall_summary_df.iloc[row_idx]):
-                worksheet.write(row_idx + 1, col_idx, value, cell_format)
+                if col_idx == 0:  # 'Date Range' column
+                    worksheet.write(row_idx + 1, col_idx, value, date_range_format)
+                else:
+                    worksheet.write(row_idx + 1, col_idx, value, cell_format)
 
         # Auto-fit columns
         for col_idx, col in enumerate(overall_summary_df.columns):
-            max_length = max(
-                overall_summary_df[col].astype(str).map(len).max(),
-                len(str(col))
-            )
+            if col_idx == 0:  # 'Date Range' column
+                max_length = max(
+                    overall_summary_df[col].astype(str).map(len).max(),
+                    len(str(col))
+                )
+            else:
+                max_length = max(
+                    overall_summary_df[col].astype(str).map(len).max(),
+                    len(str(col))
+                )
             worksheet.set_column(col_idx, col_idx, max_length + 2)
 
     return output.getvalue()
