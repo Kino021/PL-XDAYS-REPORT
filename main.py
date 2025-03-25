@@ -1,7 +1,6 @@
 import pandas as pd
 import streamlit as st
 import math
-import base64
 from io import BytesIO
 
 # Set up the page configuration
@@ -175,13 +174,10 @@ if uploaded_file is not None:
             # Generate the Excel file content
             excel_data = create_combined_excel_file(summary_dfs, overall_summary_df)
 
-            # Use st.button to trigger the download via a hidden download link
-            if st.button("Download All Results"):
-                b64 = base64.b64encode(excel_data).decode()
-                href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="MC06_Monitoring_Results.xlsx" id="download_link" style="display:none;">Download</a>'
-                st.markdown(href, unsafe_allow_html=True)
-                st.markdown("""
-                <script>
-                document.getElementById('download_link').click();
-                </script>
-                """, unsafe_allow_html=True)
+            # Use st.download_button for reliable download
+            st.download_button(
+                label="Download All Results",
+                data=excel_data,
+                file_name="MC06_Monitoring_Results.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
