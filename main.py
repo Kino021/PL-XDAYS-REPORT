@@ -171,16 +171,27 @@ if uploaded_file is not None:
                 # Calculate Total Skip
                 total_skip = positive_skip_count + negative_skip_count
 
+                # Calculate Positive Skip Average (Positive Skip / Collectors)
+                positive_skip_ave = round(positive_skip_count / total_agents, 2) if total_agents > 0 else 0
+
+                # Calculate Negative Skip Average (Negative Skip / Collectors)
+                negative_skip_ave = round(negative_skip_count / total_agents, 2) if total_agents > 0 else 0
+
+                # Calculate Total Skip Average (Total Skip / Collectors)
+                total_skip_ave = round(total_skip / total_agents, 2) if total_agents > 0 else 0
+
                 # Calculate connected average per agent using the rounded average collectors
                 connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
-                # Append results to the overall summary with date range
+                # Append results to the overall summary with new averages after Total Skip and before Talk Time
                 overall_summary.append([
-                    date_range_str, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
+                    date_range_str, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip,
+                    positive_skip_ave, negative_skip_ave, total_skip_ave, formatted_talk_time, connected_ave, talk_time_ave_str
                 ])
 
-                # Convert to DataFrame and display for this client
+                # Convert to DataFrame and display for this client with new averages
                 overall_summary_df = pd.DataFrame(overall_summary, columns=[
-                    'Date Range', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+                    'Date Range', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
+                    'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
                 ])
                 st.write(overall_summary_df)
