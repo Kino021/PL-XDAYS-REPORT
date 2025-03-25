@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import math
 import base64
+from io import BytesIO
 
 # Set up the page configuration
 st.set_page_config(layout="wide", page_title="MC06 MONITORING", page_icon="📊", initial_sidebar_state="expanded")
@@ -15,29 +16,19 @@ def load_data(uploaded_file):
     df = pd.read_excel(uploaded_file)
     return df
 
-# Function to create a downloadable CSV link and copy-to-clipboard functionality
-def get_table_download_link(df, filename, button_text):
-    csv = df.to_csv(index=False)
-    b64 = base64.b64encode(csv.encode()).decode()  # Encode to base64
-    href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">{button_text}</a>'
+# Function to create a single Excel file with multiple sheets
+def get_combined_excel_download_link(summary_dfs, overall_summary_df, filename):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Write each client's Summary Table by Day to a separate sheet
+        for client, summary_df in summary_dfs.items():
+            summary_df.to_excel(writer, sheet_name=f"Summary_{client[:31]}", index=False)  # Sheet names limited to 31 chars
+        # Write Overall Summary to a separate sheet
+        overall_summary_df.to_excel(writer, sheet_name="Overall_Summary", index=False)
+    excel_data = output.getvalue()
+    b64 = base64.b64encode(excel_data).decode()
+    href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{filename}">Download All Results as Excel</a>'
     return href
-
-def get_copy_to_clipboard_button(df, button_id):
-    csv = df.to_csv(index=False)
-    # JavaScript to copy the CSV string to clipboard
-    script = f"""
-    <button onclick="copyToClipboard('{csv}')">Copy Table to Clipboard</button>
-    <script>
-    function copyToClipboard(text) {{
-        navigator.clipboard.writeText(text).then(function() {{
-            alert('Table copied to clipboard!');
-        }}, function(err) {{
-            alert('Failed to copy table: ' + err);
-        }});
-    }}
-    </script>
-    """
-    return script
 
 # File uploader for Excel file
 uploaded_file = st.sidebar.file_uploader("Upload Daily Remark File", type="xlsx")
@@ -93,6 +84,9 @@ if uploaded_file is not None:
         "NEGATIVE VIA DIGITAL SKIP - VIBER",
     ]
 
+    # Dictionary to store summary DataFrames for each client
+    summary_dfs = {}
+
     with col1:
         st.write("## Summary Table by Day")
         min_date = df['Date'].min().date()
@@ -130,11 +124,9 @@ if uploaded_file is not None:
                     'Day', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
                     'Talk Time (HH:MM:SS)', 'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Connected Ave', 'Talk Time Ave'
                 ])
-                st.dataframe(summary_df)  # Display the table
-                # Add copy-to-clipboard button
-                st.markdown(get_copy_to_clipboard_button(summary_df, f"copy_button_{client}"), unsafe_allow_html=True)
-                # Optional: Add download link
-                st.markdown(get_table_download_link(summary_df, f"summary_by_day_{client}.csv", "Download as CSV"), unsafe_allow_html=True)
+                st.dataframe(summary_df)
+                # Store the DataFrame for this client
+                summary_dfs[client] = summary_df
 
     with col2:
         st.write("## Overall Summary per Client")
@@ -184,8 +176,7 @@ if uploaded_file is not None:
                 'Date Range', 'Client', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
                 'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
             ])
-            st.dataframe(overall_summary_df)  # Display the table
-            # Add copy-to-clipboard button
-            st.markdown(get_copy_to_clipboard_button(overall_summary_df, "copy_button_overall"), unsafe_allow_html=True)
-            # Optional: Add download link
-            st.markdown(get_table_download_link(overall_summary_df, "overall_summary.csv", "Download as CSV"), unsafe_allow_html=True)
+            st.dataframe(overall_summary_df)
+
+        # Add a single download button for all results
+        st.markdown(get_combined_excel_download_link(summary_dfs, overall_summary_df, "MC06_Monitoring_Results.xlsx"), unsafe_allow_html=True)
