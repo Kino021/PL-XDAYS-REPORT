@@ -113,16 +113,16 @@ if uploaded_file is not None:
                     # Calculate connected average per agent
                     connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
-                    # Append results to the summary table for this client
+                    # Append results to the summary table for this client with Talk Time after Total Skip
                     summary_table.append([
                         date, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip,
-                        positive_skip_ave, negative_skip_ave, total_skip_ave, formatted_talk_time, connected_ave, talk_time_ave_str
+                        formatted_talk_time, positive_skip_ave, negative_skip_ave, total_skip_ave, connected_ave, talk_time_ave_str
                     ])
 
-                # Convert to DataFrame and display for this client
+                # Convert to DataFrame and display for this client with Talk Time after Total Skip
                 summary_df = pd.DataFrame(summary_table, columns=[
                     'Day', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
-                    'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+                    'Talk Time (HH:MM:SS)', 'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Connected Ave', 'Talk Time Ave'
                 ])
                 st.write(summary_df)
 
