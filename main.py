@@ -15,32 +15,68 @@ def load_data(uploaded_file):
     df = pd.read_excel(uploaded_file)
     return df
 
-# Function to create a single Excel file with multiple sheets and auto-fit columns
+# Function to create a single Excel file with multiple sheets, auto-fit columns, borders, middle alignment, and red headers
 def create_combined_excel_file(summary_dfs, overall_summary_df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Define formats
+        workbook = writer.book
+        header_format = workbook.add_format({
+            'bg_color': '#FF0000',  # Red background
+            'font_color': '#FFFFFF',  # White text
+            'bold': True,
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
+        cell_format = workbook.add_format({
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
+
         # Write each client's Summary Table by Day to a separate sheet
         for client, summary_df in summary_dfs.items():
-            summary_df.to_excel(writer, sheet_name=f"Summary_{client[:31]}", index=False)
+            summary_df.to_excel(writer, sheet_name=f"Summary_{client[:31]}", index=False, startrow=1, header=False)
             worksheet = writer.sheets[f"Summary_{client[:31]}"]
-            # Auto-fit columns based on max content length
+
+            # Write headers with red background
+            for col_idx, col in enumerate(summary_df.columns):
+                worksheet.write(0, col_idx, col, header_format)
+
+            # Apply cell format to data and auto-fit columns
+            for row_idx in range(len(summary_df)):
+                for col_idx, value in enumerate(summary_df.iloc[row_idx]):
+                    worksheet.write(row_idx + 1, col_idx, value, cell_format)
+
+            # Auto-fit columns
             for col_idx, col in enumerate(summary_df.columns):
                 max_length = max(
-                    summary_df[col].astype(str).map(len).max(),  # Max length of data in column
-                    len(str(col))  # Length of column header
+                    summary_df[col].astype(str).map(len).max(),
+                    len(str(col))
                 )
-                worksheet.set_column(col_idx, col_idx, max_length + 2)  # Add padding for readability
+                worksheet.set_column(col_idx, col_idx, max_length + 2)
 
         # Write Overall Summary to a separate sheet
-        overall_summary_df.to_excel(writer, sheet_name="Overall_Summary", index=False)
+        overall_summary_df.to_excel(writer, sheet_name="Overall_Summary", index=False, startrow=1, header=False)
         worksheet = writer.sheets["Overall_Summary"]
-        # Auto-fit columns based on max content length
+
+        # Write headers with red background
+        for col_idx, col in enumerate(overall_summary_df.columns):
+            worksheet.write(0, col_idx, col, header_format)
+
+        # Apply cell format to data and auto-fit columns
+        for row_idx in range(len(overall_summary_df)):
+            for col_idx, value in enumerate(overall_summary_df.iloc[row_idx]):
+                worksheet.write(row_idx + 1, col_idx, value, cell_format)
+
+        # Auto-fit columns
         for col_idx, col in enumerate(overall_summary_df.columns):
             max_length = max(
-                overall_summary_df[col].astype(str).map(len).max(),  # Max length of data in column
-                len(str(col))  # Length of column header
+                overall_summary_df[col].astype(str).map(len).max(),
+                len(str(col))
             )
-            worksheet.set_column(col_idx, col_idx, max_length + 2)  # Add padding for readability
+            worksheet.set_column(col_idx, col_idx, max_length + 2)
 
     return output.getvalue()
 
@@ -191,7 +227,7 @@ if uploaded_file is not None:
             ])
             st.dataframe(overall_summary_df)
 
-            # Generate the Excel file content with auto-fitted columns
+            # Generate the Excel file content with formatted tables
             excel_data = create_combined_excel_file(summary_dfs, overall_summary_df)
 
             # Use st.download_button for reliable download
