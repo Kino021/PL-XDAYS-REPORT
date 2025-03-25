@@ -15,13 +15,33 @@ def load_data(uploaded_file):
     df = pd.read_excel(uploaded_file)
     return df
 
-# Function to create a single Excel file with multiple sheets
+# Function to create a single Excel file with multiple sheets and auto-fit columns
 def create_combined_excel_file(summary_dfs, overall_summary_df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Write each client's Summary Table by Day to a separate sheet
         for client, summary_df in summary_dfs.items():
-            summary_df.to_excel(writer, sheet_name=f"Summary_{client[:31]}", index=False)  # Sheet names limited to 31 chars
+            summary_df.to_excel(writer, sheet_name=f"Summary_{client[:31]}", index=False)
+            worksheet = writer.sheets[f"Summary_{client[:31]}"]
+            # Auto-fit columns based on max content length
+            for col_idx, col in enumerate(summary_df.columns):
+                max_length = max(
+                    summary_df[col].astype(str).map(len).max(),  # Max length of data in column
+                    len(str(col))  # Length of column header
+                )
+                worksheet.set_column(col_idx, col_idx, max_length + 2)  # Add padding for readability
+
+        # Write Overall Summary to a separate sheet
         overall_summary_df.to_excel(writer, sheet_name="Overall_Summary", index=False)
+        worksheet = writer.sheets["Overall_Summary"]
+        # Auto-fit columns based on max content length
+        for col_idx, col in enumerate(overall_summary_df.columns):
+            max_length = max(
+                overall_summary_df[col].astype(str).map(len).max(),  # Max length of data in column
+                len(str(col))  # Length of column header
+            )
+            worksheet.set_column(col_idx, col_idx, max_length + 2)  # Add padding for readability
+
     return output.getvalue()
 
 # File uploader for Excel file
@@ -171,7 +191,7 @@ if uploaded_file is not None:
             ])
             st.dataframe(overall_summary_df)
 
-            # Generate the Excel file content
+            # Generate the Excel file content with auto-fitted columns
             excel_data = create_combined_excel_file(summary_dfs, overall_summary_df)
 
             # Use st.download_button for reliable download
