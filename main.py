@@ -106,11 +106,12 @@ if uploaded_file is not None:
         st.write(summary_df)
 
     with col2:
-        st.write("## Overall Summary per Date")
+        st.write("## Overall Summary per Date and Client")
 
         overall_summary = []
 
-        for date, date_group in filtered_df.groupby(filtered_df['Date'].dt.date):
+        # Group by both 'Date' and 'Client' instead of just 'Date'
+        for (date, client), date_group in filtered_df.groupby([filtered_df['Date'].dt.date, 'Client']):
             total_agents = date_group['Remark By'].nunique()
             total_connected = date_group[date_group['Call Status'] == 'CONNECTED']['Account No.'].count()
 
@@ -138,13 +139,13 @@ if uploaded_file is not None:
             # Calculate connected average per agent
             connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
 
-            # Append results to the overall summary
+            # Append results to the overall summary including Client
             overall_summary.append([
-                date, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
+                date, client, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip, formatted_talk_time, connected_ave, talk_time_ave_str
             ])
 
-        # Convert to DataFrame and display
+        # Convert to DataFrame and display with Client column
         overall_summary_df = pd.DataFrame(overall_summary, columns=[
-            'Day', 'Total Agents', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
+            'Day', 'Client', 'Total Agents', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
         ])
         st.write(overall_summary_df)
