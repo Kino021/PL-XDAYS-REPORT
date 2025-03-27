@@ -113,6 +113,11 @@ if uploaded_file is not None:
     df['Talk Time Duration'] = pd.to_numeric(df['Talk Time Duration'], errors='coerce').fillna(0)
     df['Call Duration'] = pd.to_numeric(df['Call Duration'], errors='coerce').fillna(0)
 
+    # Debug: Print unique Status values to check for matches
+    st.write("### Debug: Unique Status Values in Data")
+    unique_statuses = df['Status'].astype(str).unique()
+    st.write(unique_statuses)
+
     # Define Positive Skip conditions
     positive_skip_keywords = [
         "BRGY SKIPTRACE_POS - LEAVE MESSAGE CALL SMS",
@@ -239,31 +244,43 @@ if uploaded_file is not None:
                     pos_col, neg_col = st.columns(2)
                     with pos_col:
                         positive_skip_group = client_group[client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False)]
-                        for status, status_group in positive_skip_group.groupby('Status'):
-                            with st.container():
-                                st.write(f"**{status}**")
-                                count = status_group.shape[0]
-                                connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
-                                talk_time_seconds = status_group['Talk Time Duration'].sum()
-                                hours, remainder = divmod(int(talk_time_seconds), 3600)
-                                minutes, seconds = divmod(remainder, 60)
-                                formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                                st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
+                        # Debug: Check if positive_skip_group has data
+                        if positive_skip_group.empty:
+                            st.write("No Positive Skip data found.")
+                        else:
+                            for status, status_group in positive_skip_group.groupby('Status'):
+                                with st.container():
+                                    st.write(f"**{status}**")
+                                    count = status_group.shape[0]
+                                    connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
+                                    talk_time_seconds = status_group['Talk Time Duration'].sum()
+                                    hours, remainder = divmod(int(talk_time_seconds), 3600)
+                                    minutes, seconds = divmod(remainder, 60)
+                                    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                                    st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
 
                     # Separate containers for Negative Skip criteria
                     st.write("### Negative Skip Breakdown")
                     with neg_col:
-                        negative_skip_group = client_group[client_group['Status'].isin(negative_skip_status)]
-                        for status, status_group in negative_skip_group.groupby('Status'):
-                            with st.container():
-                                st.write(f"**{status}**")
-                                count = status_group.shape[0]
-                                connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
-                                talk_time_seconds = status_group['Talk Time Duration'].sum()
-                                hours, remainder = divmod(int(talk_time_seconds), 3600)
-                                minutes, seconds = divmod(remainder, 60)
-                                formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                                st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
+                        # Convert Status to string and strip whitespace, then compare case-insensitively
+                        client_group['Status'] = client_group['Status'].astype(str).str.strip()
+                        negative_skip_group = client_group[client_group['Status'].str.upper().isin([status.upper() for status in negative_skip_status])]
+                        # Debug: Check if negative_skip_group has data
+                        if negative_skip_group.empty:
+                            st.write("No Negative Skip data found for this client.")
+                            st.write("Expected Negative Skip Statuses:", negative_skip_status)
+                            st.write("Actual Statuses in Data:", client_group['Status'].unique())
+                        else:
+                            for status, status_group in negative_skip_group.groupby('Status'):
+                                with st.container():
+                                    st.write(f"**{status}**")
+                                    count = status_group.shape[0]
+                                    connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
+                                    talk_time_seconds = status_group['Talk Time Duration'].sum()
+                                    hours, remainder = divmod(int(talk_time_seconds), 3600)
+                                    minutes, seconds = divmod(remainder, 60)
+                                    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                                    st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
 
     with col2:
         st.write("## Overall Summary per Client")
