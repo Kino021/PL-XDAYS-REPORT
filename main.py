@@ -187,6 +187,7 @@ if uploaded_file is not None:
                     st.subheader(f"Client: {client}")
                     
                     # Summary table for daily metrics
+                    st.write("### Daily Summary")
                     summary_table = []
                     for date, date_group in client_group.groupby(client_group['Date'].dt.date):
                         valid_group = date_group[(date_group['Call Duration'].notna()) & 
@@ -236,58 +237,56 @@ if uploaded_file is not None:
                     st.dataframe(summary_df)
                     summary_dfs[client] = summary_df
 
-                    # Breakdown section for Positive and Negative Skip per client
-                    with st.container():
-                        st.write("### Breakdown of Positive and Negative Skips")
-                        
-                        # Positive Skip Breakdown
-                        st.write("#### Positive Skip Breakdown")
-                        positive_skip_group = client_group[client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False)]
-                        if positive_skip_group.empty:
-                            st.write("No Positive Skip data found.")
-                        else:
-                            for status, status_group in positive_skip_group.groupby('Status'):
-                                with st.container():
-                                    st.write(f"**{status}**")
-                                    count = status_group.shape[0]
-                                    connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
-                                    talk_time_seconds = status_group['Talk Time Duration'].sum()
-                                    hours, remainder = divmod(int(talk_time_seconds), 3600)
-                                    minutes, seconds = divmod(remainder, 60)
-                                    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                                    summary_table = pd.DataFrame({
-                                        'Metric': ['Count', 'Connected', 'Talk Time'],
-                                        'Value': [count, connected, formatted_time]
-                                    })
-                                    st.dataframe(summary_table)
+                    # Add spacing
+                    st.write("")  # Single blank line for spacing
 
-                        # Add spacing between Positive and Negative Skip Breakdowns
-                        st.write("")  # Adds a blank line for spacing
-                        st.write("")  # Adds another blank line for additional spacing (adjust as needed)
+                    # Positive Skip Breakdown
+                    st.write("### Positive Skip Breakdown")
+                    positive_skip_group = client_group[client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False)]
+                    if positive_skip_group.empty:
+                        st.write("No Positive Skip data found.")
+                    else:
+                        for status, status_group in positive_skip_group.groupby('Status'):
+                            with st.container():
+                                st.write(f"**{status}**")
+                                count = status_group.shape[0]
+                                connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
+                                talk_time_seconds = status_group['Talk Time Duration'].sum()
+                                hours, remainder = divmod(int(talk_time_seconds), 3600)
+                                minutes, seconds = divmod(remainder, 60)
+                                formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                                summary_table = pd.DataFrame({
+                                    'Metric': ['Count', 'Connected', 'Talk Time'],
+                                    'Value': [count, connected, formatted_time]
+                                })
+                                st.dataframe(summary_table)
 
-                        # Negative Skip Breakdown
-                        st.write("#### Negative Skip Breakdown")
-                        client_group['Status'] = client_group['Status'].astype(str).str.strip()
-                        negative_skip_group = client_group[client_group['Status'].str.upper().isin([status.upper() for status in negative_skip_status])]
-                        if negative_skip_group.empty:
-                            st.write("No Negative Skip data found for this client.")
-                            st.write("Expected Negative Skip Statuses:", negative_skip_status)
-                            st.write("Actual Statuses in Data:", client_group['Status'].unique())
-                        else:
-                            for status, status_group in negative_skip_group.groupby('Status'):
-                                with st.container():
-                                    st.write(f"**{status}**")
-                                    count = status_group.shape[0]
-                                    connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
-                                    talk_time_seconds = status_group['Talk Time Duration'].sum()
-                                    hours, remainder = divmod(int(talk_time_seconds), 3600)
-                                    minutes, seconds = divmod(remainder, 60)
-                                    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                                    summary_table = pd.DataFrame({
-                                        'Metric': ['Count', 'Connected', 'Talk Time'],
-                                        'Value': [count, connected, formatted_time]
-                                    })
-                                    st.dataframe(summary_table)
+                    # Add spacing
+                    st.write("")  # Single blank line for spacing
+
+                    # Negative Skip Breakdown
+                    st.write("### Negative Skip Breakdown")
+                    client_group['Status'] = client_group['Status'].astype(str).str.strip()
+                    negative_skip_group = client_group[client_group['Status'].str.upper().isin([status.upper() for status in negative_skip_status])]
+                    if negative_skip_group.empty:
+                        st.write("No Negative Skip data found for this client.")
+                        st.write("Expected Negative Skip Statuses:", negative_skip_status)
+                        st.write("Actual Statuses in Data:", client_group['Status'].unique())
+                    else:
+                        for status, status_group in negative_skip_group.groupby('Status'):
+                            with st.container():
+                                st.write(f"**{status}**")
+                                count = status_group.shape[0]
+                                connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
+                                talk_time_seconds = status_group['Talk Time Duration'].sum()
+                                hours, remainder = divmod(int(talk_time_seconds), 3600)
+                                minutes, seconds = divmod(remainder, 60)
+                                formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                                summary_table = pd.DataFrame({
+                                    'Metric': ['Count', 'Connected', 'Talk Time'],
+                                    'Value': [count, connected, formatted_time]
+                                })
+                                st.dataframe(summary_table)
 
     with col2:
         st.write("## Overall Summary per Client")
