@@ -193,7 +193,7 @@ if uploaded_file is not None:
                     minutes, seconds = divmod(remainder, 60)
                     formatted_talk_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
                     talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
-                    ave_hours, ave_remainder = divmod(int(taik_time_ave_seconds), 3600)
+                    ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
                     ave_minutes, ave_seconds = divmod(ave_remainder, 60)
                     talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
                     positive_skip_count = sum(date_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))
