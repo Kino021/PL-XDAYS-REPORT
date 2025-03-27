@@ -150,7 +150,7 @@ if uploaded_file is not None:
         "LS VIA SOCMED - T10 PRE TERMINATION OFFER",
     ]
 
-    # Define Negative Skip status conditions
+    # Define Negative Skip status conditions (updated to include some values from debug output)
     negative_skip_status = [
         "BRGY SKIP TRACING_NEGATIVE - CLIENT UNKNOWN",
         "BRGY SKIP TRACING_NEGATIVE - MOVED OUT",
@@ -169,6 +169,8 @@ if uploaded_file is not None:
         "NEG VIA SOCMED - GOOGLE SEARCH",
         "NEG VIA SOCMED - LINKEDIN",
         "NEG VIA SOCMED - INSTAGRAM",
+        "SMS SENT",  # Added from debug output
+        "KEEPS ON RINGING_NG",  # Added from debug output
     ]
 
     # Dictionary to store summary DataFrames for each client
@@ -260,8 +262,8 @@ if uploaded_file is not None:
                                     st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
 
                     # Separate containers for Negative Skip criteria
-                    st.write("### Negative Skip Breakdown")
                     with neg_col:
+                        st.write("### Negative Skip Breakdown")
                         # Convert Status to string and strip whitespace, then compare case-insensitively
                         client_group['Status'] = client_group['Status'].astype(str).str.strip()
                         negative_skip_group = client_group[client_group['Status'].str.upper().isin([status.upper() for status in negative_skip_status])]
@@ -271,6 +273,8 @@ if uploaded_file is not None:
                             st.write("Expected Negative Skip Statuses:", negative_skip_status)
                             st.write("Actual Statuses in Data:", client_group['Status'].unique())
                         else:
+                            # Debug: Print the negative_skip_group to verify data
+                            st.write("Debug: Negative Skip Group Data", negative_skip_group[['Status']].head())
                             for status, status_group in negative_skip_group.groupby('Status'):
                                 with st.container():
                                     st.write(f"**{status}**")
