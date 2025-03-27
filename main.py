@@ -255,7 +255,12 @@ if uploaded_file is not None:
                                     hours, remainder = divmod(int(talk_time_seconds), 3600)
                                     minutes, seconds = divmod(remainder, 60)
                                     formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                                    st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
+                                    # Create a DataFrame for the summary table
+                                    summary_table = pd.DataFrame({
+                                        'Metric': ['Count', 'Connected', 'Talk Time'],
+                                        'Value': [count, connected, formatted_time]
+                                    })
+                                    st.dataframe(summary_table)
 
                     # Negative Skip Breakdown
                     with neg_col:
@@ -276,7 +281,12 @@ if uploaded_file is not None:
                                     hours, remainder = divmod(int(talk_time_seconds), 3600)
                                     minutes, seconds = divmod(remainder, 60)
                                     formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                                    st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
+                                    # Create a DataFrame for the summary table
+                                    summary_table = pd.DataFrame({
+                                        'Metric': ['Count', 'Connected', 'Talk Time'],
+                                        'Value': [count, connected, formatted_time]
+                                    })
+                                    st.dataframe(summary_table)
 
     with col2:
         st.write("## Overall Summary per Client")
@@ -351,7 +361,7 @@ if uploaded_file is not None:
                 total_skip_ave = round(daily_data['Total Skip Ave'].mean(), 2) if not daily_data.empty else 0
                 connected_ave = round(daily_data['Connected Ave'].mean(), 2) if not daily_data.empty else 0
                 talk_time_ave_seconds = daily_data['Talk Time Ave Seconds'].mean() if not daily_data.empty else 0
-                ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
+                ave_hours, ave_remainder = divmod(int(talk_time_ve_seconds), 3600)
                 ave_minutes, ave_seconds = divmod(ave_remainder, 60)
                 talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
                 overall_summary.append([
