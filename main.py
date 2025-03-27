@@ -176,90 +176,94 @@ if uploaded_file is not None:
         start_date, end_date = st.date_input("Select date range", [min_date, max_date], min_value=min_date, max_value=max_date)
         filtered_df = df[(df['Date'].dt.date >= start_date) & (df['Date'].dt.date <= end_date)]
 
-        for client, client_group in filtered_df.groupby('Client'):
-            with st.container():
-                st.subheader(f"Client: {client}")
-                
-                # Summary table for daily metrics
-                summary_table = []
-                for date, date_group in client_group.groupby(client_group['Date'].dt.date):
-                    valid_group = date_group[(date_group['Call Duration'].notna()) & 
-                                            (date_group['Call Duration'] > 0) & 
-                                            (date_group['Remark By'].str.lower() != "system")]
-                    total_agents = valid_group['Remark By'].nunique()
-                    total_connected = date_group[date_group['Call Status'] == 'CONNECTED']['Account No.'].count()
-                    total_talk_time_seconds = date_group['Talk Time Duration'].sum()
-                    hours, remainder = divmod(int(total_talk_time_seconds), 3600)
-                    minutes, seconds = divmod(remainder, 60)
-                    formatted_talk_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                    talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
-                    ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
-                    ave_minutes, ave_seconds = divmod(ave_remainder, 60)
-                    talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
-                    positive_skip_count = sum(date_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))
-                    negative_skip_count = date_group[date_group['Status'].isin(negative_skip_status)].shape[0]
-                    total_skip = positive_skip_count + negative_skip_count
-                    positive_skip_connected = date_group[(date_group['Call Status'] == 'CONNECTED') & 
-                                                        (date_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))]['Account No.'].count()
-                    negative_skip_connected = date_group[(date_group['Call Status'] == 'CONNECTED') & 
-                                                        (date_group['Status'].isin(negative_skip_status))]['Account No.'].count()
-                    positive_skip_talk_time_seconds = date_group[(date_group['Call Status'] == 'CONNECTED') & 
-                                                                (date_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))]['Talk Time Duration'].sum()
-                    negative_skip_talk_time_seconds = date_group[(date_group['Call Status'] == 'CONNECTED') & 
-                                                                (date_group['Status'].isin(negative_skip_status))]['Talk Time Duration'].sum()
-                    pos_hours, pos_remainder = divmod(int(positive_skip_talk_time_seconds), 3600)
-                    pos_minutes, pos_seconds = divmod(pos_remainder, 60)
-                    positive_skip_talk_time = f"{pos_hours:02d}:{pos_minutes:02d}:{pos_seconds:02d}"
-                    neg_hours, neg_remainder = divmod(int(negative_skip_talk_time_seconds), 3600)
-                    neg_minutes, neg_seconds = divmod(neg_remainder, 60)
-                    negative_skip_talk_time = f"{neg_hours:02d}:{neg_minutes:02d}:{neg_seconds:02d}"
-                    positive_skip_ave = round(positive_skip_count / total_agents, 2) if total_agents > 0 else 0
-                    negative_skip_ave = round(negative_skip_count / total_agents, 2) if total_agents > 0 else 0
-                    total_skip_ave = round(total_skip / total_agents, 2) if total_agents > 0 else 0
-                    connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
-                    summary_table.append([
-                        date, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip,
-                        positive_skip_connected, negative_skip_connected, positive_skip_talk_time, negative_skip_talk_time,
-                        formatted_talk_time, positive_skip_ave, negative_skip_ave, total_skip_ave, connected_ave, talk_time_ave_str
+        # Debug: Check if filtered_df has data
+        if filtered_df.empty:
+            st.warning("No data available for the selected date range.")
+        else:
+            for client, client_group in filtered_df.groupby('Client'):
+                with st.container():
+                    st.subheader(f"Client: {client}")
+                    
+                    # Summary table for daily metrics
+                    summary_table = []
+                    for date, date_group in client_group.groupby(client_group['Date'].dt.date):
+                        valid_group = date_group[(date_group['Call Duration'].notna()) & 
+                                                (date_group['Call Duration'] > 0) & 
+                                                (date_group['Remark By'].str.lower() != "system")]
+                        total_agents = valid_group['Remark By'].nunique()
+                        total_connected = date_group[date_group['Call Status'] == 'CONNECTED']['Account No.'].count()
+                        total_talk_time_seconds = date_group['Talk Time Duration'].sum()
+                        hours, remainder = divmod(int(total_talk_time_seconds), 3600)
+                        minutes, seconds = divmod(remainder, 60)
+                        formatted_talk_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                        talk_time_ave_seconds = total_talk_time_seconds / total_agents if total_agents > 0 else 0
+                        ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
+                        ave_minutes, ave_seconds = divmod(ave_remainder, 60)
+                        talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
+                        positive_skip_count = sum(date_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))
+                        negative_skip_count = date_group[date_group['Status'].isin(negative_skip_status)].shape[0]
+                        total_skip = positive_skip_count + negative_skip_count
+                        positive_skip_connected = date_group[(date_group['Call Status'] == 'CONNECTED') & 
+                                                            (date_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))]['Account No.'].count()
+                        negative_skip_connected = date_group[(date_group['Call Status'] == 'CONNECTED') & 
+                                                            (date_group['Status'].isin(negative_skip_status))]['Account No.'].count()
+                        positive_skip_talk_time_seconds = date_group[(date_group['Call Status'] == 'CONNECTED') & 
+                                                                    (date_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False))]['Talk Time Duration'].sum()
+                        negative_skip_talk_time_seconds = date_group[(date_group['Call Status'] == 'CONNECTED') & 
+                                                                    (date_group['Status'].isin(negative_skip_status))]['Talk Time Duration'].sum()
+                        pos_hours, pos_remainder = divmod(int(positive_skip_talk_time_seconds), 3600)
+                        pos_minutes, pos_seconds = divmod(pos_remainder, 60)
+                        positive_skip_talk_time = f"{pos_hours:02d}:{pos_minutes:02d}:{pos_seconds:02d}"
+                        neg_hours, neg_remainder = divmod(int(negative_skip_talk_time_seconds), 3600)
+                        neg_minutes, neg_seconds = divmod(neg_remainder, 60)
+                        negative_skip_talk_time = f"{neg_hours:02d}:{neg_minutes:02d}:{neg_seconds:02d}"
+                        positive_skip_ave = round(positive_skip_count / total_agents, 2) if total_agents > 0 else 0
+                        negative_skip_ave = round(negative_skip_count / total_agents, 2) if total_agents > 0 else 0
+                        total_skip_ave = round(total_skip / total_agents, 2) if total_agents > 0 else 0
+                        connected_ave = round(total_connected / total_agents, 2) if total_agents > 0 else 0
+                        summary_table.append([
+                            date, total_agents, total_connected, positive_skip_count, negative_skip_count, total_skip,
+                            positive_skip_connected, negative_skip_connected, positive_skip_talk_time, negative_skip_talk_time,
+                            formatted_talk_time, positive_skip_ave, negative_skip_ave, total_skip_ave, connected_ave, talk_time_ave_str
+                        ])
+                    summary_df = pd.DataFrame(summary_table, columns=[
+                        'Day', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
+                        'Positive Skip Connected', 'Negative Skip Connected', 'Positive Skip Talk Time', 'Negative Skip Talk Time',
+                        'Talk Time (HH:MM:SS)', 'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Connected Ave', 'Talk Time Ave'
                     ])
-                summary_df = pd.DataFrame(summary_table, columns=[
-                    'Day', 'Collectors', 'Total Connected', 'Positive Skip', 'Negative Skip', 'Total Skip',
-                    'Positive Skip Connected', 'Negative Skip Connected', 'Positive Skip Talk Time', 'Negative Skip Talk Time',
-                    'Talk Time (HH:MM:SS)', 'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Connected Ave', 'Talk Time Ave'
-                ])
-                st.dataframe(summary_df)
-                summary_dfs[client] = summary_df
+                    st.dataframe(summary_df)
+                    summary_dfs[client] = summary_df
 
-                # Separate containers for Positive Skip criteria
-                st.write("### Positive Skip Breakdown")
-                pos_col, neg_col = st.columns(2)
-                with pos_col:
-                    positive_skip_group = client_group[client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False)]
-                    for status, status_group in positive_skip_group.groupby('Status'):
-                        with st.container():
-                            st.write(f"**{status}**")
-                            count = status_group.shape[0]
-                            connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
-                            talk_time_seconds = status_group['Talk Time Duration'].sum()
-                            hours, remainder = divmod(int(talk_time_seconds), 3600)
-                            minutes, seconds = divmod(remainder, 60)
-                            formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                            st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
+                    # Separate containers for Positive Skip criteria
+                    st.write("### Positive Skip Breakdown")
+                    pos_col, neg_col = st.columns(2)
+                    with pos_col:
+                        positive_skip_group = client_group[client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False)]
+                        for status, status_group in positive_skip_group.groupby('Status'):
+                            with st.container():
+                                st.write(f"**{status}**")
+                                count = status_group.shape[0]
+                                connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
+                                talk_time_seconds = status_group['Talk Time Duration'].sum()
+                                hours, remainder = divmod(int(talk_time_seconds), 3600)
+                                minutes, seconds = divmod(remainder, 60)
+                                formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                                st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
 
-                # Separate containers for Negative Skip criteria
-                st.write("### Negative Skip Breakdown")
-                with neg_col:
-                    negative_skip_group = client_group[client_group['Status'].isin(negative_skip_status)]
-                    for status, status_group in negative_skip_group.groupby('Status'):
-                        with st.container():
-                            st.write(f"**{status}**")
-                            count = status_group.shape[0]
-                            connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
-                            talk_time_seconds = status_group['Talk Time Duration'].sum()
-                            hours, remainder = divmod(int(talk_time_seconds), 3600)
-                            minutes, seconds = divmod(remainder, 60)
-                            formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                            st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
+                    # Separate containers for Negative Skip criteria
+                    st.write("### Negative Skip Breakdown")
+                    with neg_col:
+                        negative_skip_group = client_group[client_group['Status'].isin(negative_skip_status)]
+                        for status, status_group in negative_skip_group.groupby('Status'):
+                            with st.container():
+                                st.write(f"**{status}**")
+                                count = status_group.shape[0]
+                                connected = status_group[status_group['Call Status'] == 'CONNECTED']['Account No.'].count()
+                                talk_time_seconds = status_group['Talk Time Duration'].sum()
+                                hours, remainder = divmod(int(talk_time_seconds), 3600)
+                                minutes, seconds = divmod(remainder, 60)
+                                formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                                st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
 
     with col2:
         st.write("## Overall Summary per Client")
@@ -272,6 +276,11 @@ if uploaded_file is not None:
 
             overall_summary = []
             for client, client_group in filtered_df.groupby('Client'):
+                # Debug: Check if client_group has data
+                if client_group.empty:
+                    st.warning(f"No data for client {client} in the selected date range.")
+                    continue
+
                 total_agents = avg_collectors_per_client.get(client, 0)
                 total_connected = client_group[client_group['Call Status'] == 'CONNECTED']['Account No.'].count()
                 total_talk_time_seconds = client_group['Talk Time Duration'].sum()
@@ -343,15 +352,20 @@ if uploaded_file is not None:
                 'Positive Skip Connected', 'Negative Skip Connected', 'Positive Skip Talk Time', 'Negative Skip Talk Time',
                 'Positive Skip Ave', 'Negative Skip Ave', 'Total Skip Ave', 'Talk Time (HH:MM:SS)', 'Connected Ave', 'Talk Time Ave'
             ])
-            st.dataframe(overall_summary_df)
+            
+            # Check if overall_summary_df is empty
+            if overall_summary_df.empty:
+                st.warning("No overall summary data available for the selected date range.")
+            else:
+                st.dataframe(overall_summary_df)
 
-            # Generate the Excel file content with formatted tables
-            excel_data = create_combined_excel_file(summary_dfs, overall_summary_df)
+                # Generate the Excel file content with formatted tables
+                excel_data = create_combined_excel_file(summary_dfs, overall_summary_df)
 
-            # Use st.download_button for reliable download
-            st.download_button(
-                label="Download All Results",
-                data=excel_data,
-                file_name="MC06_Monitoring_Results.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+                # Use st.download_button for reliable download
+                st.download_button(
+                    label="Download All Results",
+                    data=excel_data,
+                    file_name="MC06_Monitoring_Results.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
