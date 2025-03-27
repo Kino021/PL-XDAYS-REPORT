@@ -236,10 +236,12 @@ if uploaded_file is not None:
                     st.dataframe(summary_df)
                     summary_dfs[client] = summary_df
 
-                    # Separate containers for Positive Skip criteria
-                    st.write("### Positive Skip Breakdown")
+                    # Breakdown section for Positive and Negative Skip per client
                     pos_col, neg_col = st.columns(2)
+
+                    # Positive Skip Breakdown
                     with pos_col:
+                        st.write("### Positive Skip Breakdown")
                         positive_skip_group = client_group[client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False)]
                         if positive_skip_group.empty:
                             st.write("No Positive Skip data found.")
@@ -255,10 +257,9 @@ if uploaded_file is not None:
                                     formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
                                     st.write(f"Count: {count}, Connected: {connected}, Talk Time: {formatted_time}")
 
-                    # Separate containers for Negative Skip criteria
+                    # Negative Skip Breakdown
                     with neg_col:
                         st.write("### Negative Skip Breakdown")
-                        # Convert Status to string and strip whitespace, then compare case-insensitively
                         client_group['Status'] = client_group['Status'].astype(str).str.strip()
                         negative_skip_group = client_group[client_group['Status'].str.upper().isin([status.upper() for status in negative_skip_status])]
                         if negative_skip_group.empty:
@@ -266,8 +267,6 @@ if uploaded_file is not None:
                             st.write("Expected Negative Skip Statuses:", negative_skip_status)
                             st.write("Actual Statuses in Data:", client_group['Status'].unique())
                         else:
-                            # Debug: Print the negative_skip_group to verify data (remove this if not needed)
-                            st.write("Debug: Negative Skip Group Data", negative_skip_group[['Status']].head())
                             for status, status_group in negative_skip_group.groupby('Status'):
                                 with st.container():
                                     st.write(f"**{status}**")
