@@ -237,11 +237,11 @@ if uploaded_file is not None:
                     summary_dfs[client] = summary_df
 
                     # Breakdown section for Positive and Negative Skip per client
-                    pos_col, neg_col = st.columns(2)
-
-                    # Positive Skip Breakdown
-                    with pos_col:
-                        st.write("### Positive Skip Breakdown")
+                    with st.container():
+                        st.write("### Breakdown of Positive and Negative Skips")
+                        
+                        # Positive Skip Breakdown
+                        st.write("#### Positive Skip Breakdown")
                         positive_skip_group = client_group[client_group['Status'].astype(str).str.contains('|'.join(positive_skip_keywords), case=False, na=False)]
                         if positive_skip_group.empty:
                             st.write("No Positive Skip data found.")
@@ -261,9 +261,12 @@ if uploaded_file is not None:
                                     })
                                     st.dataframe(summary_table)
 
-                    # Negative Skip Breakdown
-                    with neg_col:
-                        st.write("### Negative Skip Breakdown")
+                        # Add spacing between Positive and Negative Skip Breakdowns
+                        st.write("")  # Adds a blank line for spacing
+                        st.write("")  # Adds another blank line for additional spacing (adjust as needed)
+
+                        # Negative Skip Breakdown
+                        st.write("#### Negative Skip Breakdown")
                         client_group['Status'] = client_group['Status'].astype(str).str.strip()
                         negative_skip_group = client_group[client_group['Status'].str.upper().isin([status.upper() for status in negative_skip_status])]
                         if negative_skip_group.empty:
@@ -359,7 +362,7 @@ if uploaded_file is not None:
                 total_skip_ave = round(daily_data['Total Skip Ave'].mean(), 2) if not daily_data.empty else 0
                 connected_ave = round(daily_data['Connected Ave'].mean(), 2) if not daily_data.empty else 0
                 talk_time_ave_seconds = daily_data['Talk Time Ave Seconds'].mean() if not daily_data.empty else 0
-                ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)  # Fixed: replaced talk_time_ve_seconds
+                ave_hours, ave_remainder = divmod(int(talk_time_ave_seconds), 3600)
                 ave_minutes, ave_seconds = divmod(ave_remainder, 60)
                 talk_time_ave_str = f"{ave_hours:02d}:{ave_minutes:02d}:{ave_seconds:02d}"
                 overall_summary.append([
